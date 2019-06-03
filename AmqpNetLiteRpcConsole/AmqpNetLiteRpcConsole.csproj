@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\AmqpeNetLiteRpcCore\AmqpeNetLiteRpcCore.csproj" />
+    <ProjectReference Include="..\AmqpNetLiteRpcCore\AmqpNetLiteRpcCore.csproj" />
     <PackageReference Include="AMQPNetLite" Version="2.1.7" />
   </ItemGroup>
 
