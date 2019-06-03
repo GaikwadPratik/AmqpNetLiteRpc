@@ -18,26 +18,47 @@ namespace AmqpNetLiteRpcConsole
             Connection _connection = await _connFactory.CreateAsync(_address);
             RpcServer _rpcServer = new RpcServer(amqpNodeAddress: "amq.topic/test", connection: _connection);
             _rpcServer.Connect();
-            _rpcServer.Bind(methodName: "namedParams", functionWrapperType: typeof(Test), requestParameterType: typeof(TestRequest));
+            _rpcServer.Bind(methodName: "noParams", new RpcRequestObjectTypes() { FunctionWrapperType = typeof(Test) });
+            _rpcServer.Bind(methodName: "simpleParams", new RpcRequestObjectTypes() { FunctionWrapperType = typeof(Test), RequestParameterType = typeof(TestRequestList) });
+            _rpcServer.Bind(methodName: "namedParams", new RpcRequestObjectTypes() { FunctionWrapperType = typeof(Test), RequestParameterType = typeof(TestRequestMap) });
             //rpcServer.Disconnect();
             Console.ReadLine();
         }
     }
 
+    [AmqpContract(Encoding = EncodingType.SimpleList)]
+    public class TestRequestList
+    {
+        [AmqpMember(Order = 1)]
+        public string firstName { get; set; }
+        [AmqpMember(Order = 2)]
+        public string lastName { get; set; }
+    }
+
     [AmqpContract(Encoding = EncodingType.SimpleMap)]
-    public class TestRequest
+    public class TestRequestMap
     {
         [AmqpMember]
-        public double firstName { get; set; }
+        public string firstName { get; set; }
         [AmqpMember]
         public string lastName { get; set; }
     }
 
     class Test
     {
-        public void namedParams()
+        public string noParams()
         {
+            return $"123 456";
+        }
 
+        public string simpleParams(TestRequestList request)
+        {
+            return $"{request.firstName} {request.lastName}";
+        }
+
+        public string namedParams(TestRequestMap request)
+        {
+            return $"{request.firstName} {request.lastName}";
         }
     }
 }

@@ -14,12 +14,6 @@ using Newtonsoft.Json;
 
 namespace AmqpNetLiteRpcCore
 {
-    class RequestObjectTypes
-    {
-        public Type FunctionWrapperType { get; set; }
-        public Type RequestParameterType { get; set; }
-    }
-
     public class RpcServer
     {
         private Connection _connection = null;
@@ -29,7 +23,7 @@ namespace AmqpNetLiteRpcCore
         private string _subject = string.Empty;
         private string _amqpNode = string.Empty;
 
-        private Dictionary<string, RequestObjectTypes> _serverFunctions = new Dictionary<string, RequestObjectTypes>();
+        private Dictionary<string, RpcRequestObjectTypes> _serverFunctions = new Dictionary<string, RpcRequestObjectTypes>();
 
         public RpcServer(string amqpNodeAddress, Connection connection)
         {
@@ -164,11 +158,10 @@ namespace AmqpNetLiteRpcCore
             else
             {
                 _response.ResponseCode = RpcResponseType.Ok;
-                _response.ResponseMessage = response ?? 1;
+                _response.ResponseMessage = response;
             }
 
-            //Message _message = new Message(body: new Map() {{"responseCode",  "OK"}, {"responseMessage", 1}});
-            Message _message = new Message(body: _response);
+            Message _message = new Message() { BodySection = new AmqpValue<AmqpRpcResponse>(_response) };
             this._sender = new SenderLink(session: this._session, name: "AmqpNetLiteRpcServerResponse", address: replyTo);
             _message.Properties = new Properties()
             {
@@ -197,7 +190,7 @@ namespace AmqpNetLiteRpcCore
             }
         }
 
-        public void Bind(string methodName, Type functionWrapperType, Type requestParameterType)
+        public void Bind(string methodName, RpcRequestObjectTypes requestObjectTypes)
         {
             if (string.IsNullOrEmpty(methodName))
             {
@@ -207,12 +200,7 @@ namespace AmqpNetLiteRpcCore
             {
                 throw new AmqpRpcDuplicateFunctionDefinitionException($"{methodName} is already bound to RPC server");
             }
-            var _requestObjectType = new RequestObjectTypes()
-            {
-                FunctionWrapperType = functionWrapperType,
-                RequestParameterType = requestParameterType
-            };
-            this._serverFunctions.Add(methodName, _requestObjectType);
+            this._serverFunctions.Add(methodName, requestObjectTypes);
         }
 
         public void Connect()
