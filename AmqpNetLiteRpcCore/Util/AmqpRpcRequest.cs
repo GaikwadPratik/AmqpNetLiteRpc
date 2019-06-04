@@ -6,11 +6,11 @@ namespace AmqpNetLiteRpcCore
     [AmqpContract(Encoding = EncodingType.SimpleMap)]
     public class AmqpRpcRequest
     {
-        [AmqpMember]
-        public string method { get; set; }
+        [AmqpMember(Name = "method")]
+        public string Method { get; set; }
         [AmqpMember(Name = "params")]
-        public object parameters { get; set; }
-        [AmqpMember]
-        public string type { get; set; }
+        public object Parameters { get; set; }
+        [AmqpMember(Name = "type")]
+        public string Type { get; set; }
     }
 }

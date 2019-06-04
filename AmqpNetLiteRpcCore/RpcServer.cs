@@ -48,33 +48,33 @@ namespace AmqpNetLiteRpcCore
                     .Select(x => x.GetRawConstantValue() as string)
                     .ToList();
 
-                if (!_rpMethodTypes.Contains(_rpcRequest.type))
+                if (!_rpMethodTypes.Contains(_rpcRequest.Type))
                 {
-                    Log.Error($"Invalid request type received: {_rpcRequest.type}");
-                    await this.SendResponse(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.type, response: null, ex: new AmqpRpcInvalidRpcTypeException($"{_rpcRequest.type}"));
+                    Log.Error($"Invalid request type received: {_rpcRequest.Type}");
+                    await this.SendResponse(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: null, ex: new AmqpRpcInvalidRpcTypeException($"{_rpcRequest.Type}"));
                     return;
                 }
-                if (string.IsNullOrEmpty(_rpcRequest.method))
+                if (string.IsNullOrEmpty(_rpcRequest.Method))
                 {
                     Log.Error("Missing RPC function call name", _rpcRequest);
-                    await this.SendResponse(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.type, response: null, ex: new AmqpRpcMissingFunctionNameException($"{_rpcRequest}"));
+                    await this.SendResponse(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: null, ex: new AmqpRpcMissingFunctionNameException($"{_rpcRequest}"));
                     return;
                 }
-                if (!this._serverFunctions.ContainsKey(_rpcRequest.method))
+                if (!this._serverFunctions.ContainsKey(_rpcRequest.Method))
                 {
-                    Log.Error($"Unknown RPC method request received: {_rpcRequest.method}");
-                    await this.SendResponse(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.type, response: null, ex: new AmqpRpcUnknownFunctionException($"{_rpcRequest.method} is not bound to remote server"));
+                    Log.Error($"Unknown RPC method request received: {_rpcRequest.Method}");
+                    await this.SendResponse(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: null, ex: new AmqpRpcUnknownFunctionException($"{_rpcRequest.Method} is not bound to remote server"));
                     return;
                 }
-                var _requestObjectType = this._serverFunctions.SingleOrDefault(x => x.Key.Equals(_rpcRequest.method));
+                var _requestObjectType = this._serverFunctions.SingleOrDefault(x => x.Key.Equals(_rpcRequest.Method));
                 if (_requestObjectType.Value == null)
                 {
-                    Log.Error($"Unknown RPC method request received: {_rpcRequest.method}");
-                    await this.SendResponse(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.type, response: null, ex: new AmqpRpcUnknownFunctionException($"{_rpcRequest.method} is not bound to remote server"));
+                    Log.Error($"Unknown RPC method request received: {_rpcRequest.Method}");
+                    await this.SendResponse(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: null, ex: new AmqpRpcUnknownFunctionException($"{_rpcRequest.Method} is not bound to remote server"));
                     return;
                 }
 
-                var _methodParameter = this.GetRequestMessage(deserializationType: _requestObjectType.Value.RequestParameterType, parameters: _rpcRequest.parameters);
+                var _methodParameter = this.GetRequestMessage(deserializationType: _requestObjectType.Value.RequestParameterType, parameters: _rpcRequest.Parameters);
                 var _classInstance = Activator.CreateInstance(_requestObjectType.Value.FunctionWrapperType);
                 MethodInfo _method = _requestObjectType.Value.FunctionWrapperType.GetMethod(_requestObjectType.Key);
                 try
@@ -84,16 +84,16 @@ namespace AmqpNetLiteRpcCore
                         //TODO: check for missing properties from rpc calls
                         //await this.SendResponse(replyTo: _replyTo, correlationId: _correlationId, _rpcRequest.type, null, new AmqpRpcUnknowParameterException($"{_rpcRequest.method} invokation failed, mismatch in parameter"));
                         object _rtnVal = _method.Invoke(_classInstance, new[] { _methodParameter });
-                        await this.SendResponse(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.type, response: _rtnVal, ex: null);
+                        await this.SendResponse(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: _rtnVal, ex: null);
                     }
                     else if (_methodParameter is null && _method.GetParameters().Length.Equals(0))
                     {
                         object _rtnVal = _method.Invoke(_classInstance, null);
-                        await this.SendResponse(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.type, response: _rtnVal, ex: null);
+                        await this.SendResponse(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: _rtnVal, ex: null);
                     }
                     else
                     {
-                        await this.SendResponse(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.type, response: null, ex: new AmqpRpcUnknowParameterException($"{_rpcRequest.method} invokation failed, mismatch in parameter"));
+                        await this.SendResponse(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: null, ex: new AmqpRpcUnknowParameterException($"{_rpcRequest.Method} invokation failed, mismatch in parameter"));
                     }
                 }
                 catch (Exception ex)
