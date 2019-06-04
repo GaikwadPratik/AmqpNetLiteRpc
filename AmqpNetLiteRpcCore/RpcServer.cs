@@ -162,7 +162,7 @@ namespace AmqpNetLiteRpcCore
             }
 
             Message _message = new Message() { BodySection = new AmqpValue<AmqpRpcResponse>(_response) };
-            this._sender = new SenderLink(session: this._session, name: "AmqpNetLiteRpcServerResponse", address: replyTo);
+            this._sender = new SenderLink(session: this._session, name: "AmqpNetLiteRpcServerSender", address: replyTo);
             _message.Properties = new Properties()
             {
                 CorrelationId = correlationId,
@@ -196,6 +196,10 @@ namespace AmqpNetLiteRpcCore
             {
                 throw new AmqpRpcMissingFunctionNameException("Function name is missing during definition binding");
             }
+            if (!requestObjectTypes.FunctionWrapperType.GetMethods(BindingFlags.Public|BindingFlags.Instance|BindingFlags.DeclaredOnly).Any(x => x.Name.Equals(methodName)))
+            {
+                throw new AmqpRpcUnknownFunctionException($"{methodName} is not found in {requestObjectTypes.FunctionWrapperType.Name}");
+            }
             if (this._serverFunctions.ContainsKey(methodName))
             {
                 throw new AmqpRpcDuplicateFunctionDefinitionException($"{methodName} is already bound to RPC server");
@@ -225,7 +229,7 @@ namespace AmqpNetLiteRpcCore
                     this._subject);
             }
             _attach.Source = _source;
-            this._receiver = new ReceiverLink(session: this._session, name: "AmqpNetLiteRpcServer", attach: _attach, onAttached: OnReceiverLinkAttached);
+            this._receiver = new ReceiverLink(session: this._session, name: "AmqpNetLiteRpcServerReceiver", attach: _attach, onAttached: OnReceiverLinkAttached);
             this._receiver.Closed += OnReceiverLinkClosed;
             this._receiver.Start(credit: 100, onMessage: ProcessIncomingRpcRequest);
         }
