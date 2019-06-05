@@ -21,6 +21,7 @@ namespace AmqpNetLiteRpcConsole
             _rpcServer.Bind(methodName: "noParams", new RpcRequestObjectTypes() { FunctionWrapperType = typeof(Test) });
             _rpcServer.Bind(methodName: "simpleParams", new RpcRequestObjectTypes() { FunctionWrapperType = typeof(Test), RequestParameterType = typeof(TestRequestList) });
             _rpcServer.Bind(methodName: "namedParams", new RpcRequestObjectTypes() { FunctionWrapperType = typeof(Test), RequestParameterType = typeof(TestRequestMap) });
+            _rpcServer.Bind(methodName: "nullResponse", new RpcRequestObjectTypes() { FunctionWrapperType = typeof(Test) });
 
             var _rpcClient = new RpcClient(amqpNodeAddress: "amq.topic/test", connection: _connection);
             _rpcClient.MessageTimeout = 1;
@@ -33,6 +34,8 @@ namespace AmqpNetLiteRpcConsole
                 Console.WriteLine(JsonConvert.SerializeObject(c));
                 c = await _rpcClient.Call<TestRequestMap>("namedParams", new TestRequestMap() { firstName = "123", lastName = "456" });
                 Console.WriteLine(JsonConvert.SerializeObject(c));
+                var D = await _rpcClient.Call<object>("nullResponse");
+                Console.WriteLine(D is null);
                 await _rpcClient.Call<TestRequestMap>("namedParams");
             }
             catch (Exception ex)
@@ -76,6 +79,11 @@ namespace AmqpNetLiteRpcConsole
         public TestRequestMap namedParams(TestRequestMap request)
         {
             return new TestRequestMap() { firstName = "123", lastName = "456" };
+        }
+
+        public void nullResponse()
+        {
+            
         }
     }
 }
