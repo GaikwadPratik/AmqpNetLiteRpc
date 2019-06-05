@@ -51,13 +51,13 @@ namespace AmqpNetLiteRpcCore
                 if (!_rpMethodTypes.Contains(_rpcRequest.Type))
                 {
                     Log.Error($"Invalid request type received: {_rpcRequest.Type}");
-                    await this.SendResponse(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: null, ex: new AmqpRpcInvalidRpcTypeException($"{_rpcRequest.Type}"));
+                    await this.SendResponse(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: null, ex: new AmqpRpcInvalidRpcTypeException(_rpcRequest.Type));
                     return;
                 }
                 if (string.IsNullOrEmpty(_rpcRequest.Method))
                 {
-                    Log.Error("Missing RPC function call name", _rpcRequest);
-                    await this.SendResponse(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: null, ex: new AmqpRpcMissingFunctionNameException($"{_rpcRequest}"));
+                    Log.Error("Missing RPC function call name: {@_rpcRequest}", _rpcRequest);
+                    await this.SendResponse(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: null, ex: new AmqpRpcMissingFunctionNameException(JsonConvert.SerializeObject(_rpcRequest)));
                     return;
                 }
                 if (!this._serverFunctions.ContainsKey(_rpcRequest.Method))
@@ -74,7 +74,7 @@ namespace AmqpNetLiteRpcCore
                     return;
                 }
 
-                var _methodParameter = this.GetRequestMessage(deserializationType: _requestObjectType.Value.RequestParameterType, parameters: _rpcRequest.Parameters);
+                var _methodParameter = new Utility().GetRequestMessage(deserializationType: _requestObjectType.Value.RequestParameterType, parameters: _rpcRequest.Parameters);
                 var _classInstance = Activator.CreateInstance(_requestObjectType.Value.FunctionWrapperType);
                 MethodInfo _method = _requestObjectType.Value.FunctionWrapperType.GetMethod(_requestObjectType.Key);
                 try
@@ -93,53 +93,16 @@ namespace AmqpNetLiteRpcCore
                     }
                     else
                     {
-                        await this.SendResponse(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: null, ex: new AmqpRpcUnknowParameterException($"{_rpcRequest.Method} invokation failed, mismatch in parameter"));
+                        await this.SendResponse(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: null, ex: new AmqpRpcUnknowParameterException($"{_rpcRequest.Method} invocation failed, mismatch in parameter"));
                     }
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(JsonConvert.SerializeObject(ex), "Error in sending response");
-                    //await this.SendResponse(replyTo: _replyTo, correlationId: _correlationId, _rpcRequest.type, null, ex);
+                    Log.Error(JsonConvert.SerializeObject(ex), $"Error in sending response replyTo: {_replyTo}");
                 }
 
                 return;
             });
-        }
-
-        /// <summary>
-        /// Converts parameter object from Amqp request to a particular type to be used as input parameter to RPC method being invoked
-        /// </summary>
-        /// <param name="deserializationType">Type into which object parameters must be converted</param>
-        /// <param name="parameters">Input received at AmqpRequest.body.params</param>
-        /// <returns>Deserialized object which will be used as an input to Rpc Method</returns>
-        private dynamic GetRequestMessage(Type deserializationType, object parameters)
-        {
-            try
-            {
-                //Create Amqp serializer instance
-                AmqpSerializer _serializer = new AmqpSerializer();
-                //Create dynamic buffer
-                ByteBuffer _paramsBuffer = new ByteBuffer(1024, true);
-                //Write object to buffer
-                _serializer.WriteObject(_paramsBuffer, parameters);
-                //Get ReadObject methodinfo using reflection 
-                var _readObjectMethodInfo = typeof(AmqpSerializer).GetMethods(BindingFlags.Public | BindingFlags.Instance)
-                    .Where(x => x.Name.Equals("ReadObject") && x.IsGenericMethod && x.GetGenericArguments().Length.Equals(1))
-                    .FirstOrDefault();
-                if (_readObjectMethodInfo == null)
-                {
-                    throw new MissingMethodException("ReadObject from AmqpSerializer");
-                }
-                //Mark methodinfo as generic
-                var _readObjectGenericMethodInfo = _readObjectMethodInfo.MakeGenericMethod(deserializationType);
-                //Invoke ReadObject to deserialize object
-                return _readObjectGenericMethodInfo.Invoke(_serializer, new[] { _paramsBuffer });
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Exception while deserializing request parameters", parameters);
-            }
-            return null;
         }
 
         private async Task SendResponse(string replyTo, string correlationId, string requestType, object response, Exception ex)
@@ -153,7 +116,13 @@ namespace AmqpNetLiteRpcCore
             if (ex != null)
             {
                 _response.ResponseCode = RpcResponseType.Error;
-                _response.ResponseMessage = ex;
+                var _error = new AmqpRpcServerException()
+                {
+                    Code = ErrorCode.AmqpRpcUnknownParameter,
+                    Message = ex.Message,
+                    Stack = ex.StackTrace
+                };
+                _response.ResponseMessage = _error;
             }
             else
             {
@@ -196,7 +165,7 @@ namespace AmqpNetLiteRpcCore
             {
                 throw new AmqpRpcMissingFunctionNameException("Function name is missing during definition binding");
             }
-            if (!requestObjectTypes.FunctionWrapperType.GetMethods(BindingFlags.Public|BindingFlags.Instance|BindingFlags.DeclaredOnly).Any(x => x.Name.Equals(methodName)))
+            if (!requestObjectTypes.FunctionWrapperType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly).Any(x => x.Name.Equals(methodName)))
             {
                 throw new AmqpRpcUnknownFunctionException($"{methodName} is not found in {requestObjectTypes.FunctionWrapperType.Name}");
             }
