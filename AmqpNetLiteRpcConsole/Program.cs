@@ -12,7 +12,7 @@ namespace AmqpNetLiteRpcConsole
         public static async Task Main(string[] args)
         {
             Console.WriteLine("Hello World!");
-            Address _address = new Address(host: "192.168.122.2", port: 5672, user: "system", password: "manager", scheme: "amqp");
+            Address _address = new Address(host: "192.168.122.2", port: 5672, user: "", password: "", scheme: "amqp");
             ConnectionFactory _connFactory = new ConnectionFactory();
             //_connFactory.SSL.ClientCertificates 
             Connection _connection = await _connFactory.CreateAsync(_address);
