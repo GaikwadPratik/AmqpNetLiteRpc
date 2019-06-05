@@ -2,3 +2,5 @@ bin/
 obj/
 logs/
 .vscode/
+.vs/
+packages/

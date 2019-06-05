@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AmqpNetLiteRpcCore", "AmqpNetLiteRpcCore\AmqpNetLiteRpcCore.csproj", "{6615F901-FA8E-499F-9040-C7ECD97176B3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AmqpNetLiteRpcCore", "AmqpNetLiteRpcCore\AmqpNetLiteRpcCore.csproj", "{6615F901-FA8E-499F-9040-C7ECD97176B3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AmqpNetLiteRpcConsole", "AmqpNetLiteRpcConsole\AmqpNetLiteRpcConsole.csproj", "{40048922-F48A-411D-898E-63B4656740F1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AmqpNetLiteRpcConsole", "AmqpNetLiteRpcConsole\AmqpNetLiteRpcConsole.csproj", "{40048922-F48A-411D-898E-63B4656740F1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AmqpNetFConsole", "AmqpNetFConsole\AmqpNetFConsole.csproj", "{963003D8-9C72-4A1B-987B-D0FBC459002B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,9 +17,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{6615F901-FA8E-499F-9040-C7ECD97176B3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -44,5 +43,23 @@ Global
 		{40048922-F48A-411D-898E-63B4656740F1}.Release|x64.Build.0 = Release|Any CPU
 		{40048922-F48A-411D-898E-63B4656740F1}.Release|x86.ActiveCfg = Release|Any CPU
 		{40048922-F48A-411D-898E-63B4656740F1}.Release|x86.Build.0 = Release|Any CPU
+		{963003D8-9C72-4A1B-987B-D0FBC459002B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{963003D8-9C72-4A1B-987B-D0FBC459002B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{963003D8-9C72-4A1B-987B-D0FBC459002B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{963003D8-9C72-4A1B-987B-D0FBC459002B}.Debug|x64.Build.0 = Debug|Any CPU
+		{963003D8-9C72-4A1B-987B-D0FBC459002B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{963003D8-9C72-4A1B-987B-D0FBC459002B}.Debug|x86.Build.0 = Debug|Any CPU
+		{963003D8-9C72-4A1B-987B-D0FBC459002B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{963003D8-9C72-4A1B-987B-D0FBC459002B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{963003D8-9C72-4A1B-987B-D0FBC459002B}.Release|x64.ActiveCfg = Release|Any CPU
+		{963003D8-9C72-4A1B-987B-D0FBC459002B}.Release|x64.Build.0 = Release|Any CPU
+		{963003D8-9C72-4A1B-987B-D0FBC459002B}.Release|x86.ActiveCfg = Release|Any CPU
+		{963003D8-9C72-4A1B-987B-D0FBC459002B}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2389C643-2164-49A1-83B3-EACA643DF0E8}
 	EndGlobalSection
 EndGlobal
