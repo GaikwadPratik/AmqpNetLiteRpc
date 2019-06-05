@@ -12,19 +12,19 @@ namespace AmqpNetLiteRpcConsole
         public static async Task Main(string[] args)
         {
             Console.WriteLine("Hello World!");
-            Address _address = new Address(host: "192.168.122.2", port: 5672, user: "", password: "", scheme: "amqp");
+            Address _address = new Address(host: "192.168.122.2", port: 5672, user: "system", password: "manager", scheme: "amqp");
             ConnectionFactory _connFactory = new ConnectionFactory();
             //_connFactory.SSL.ClientCertificates 
             Connection _connection = await _connFactory.CreateAsync(_address);
             RpcServer _rpcServer = new RpcServer(amqpNodeAddress: "amq.topic/test", connection: _connection);
             _rpcServer.Connect();
-            _rpcServer.Bind(methodName: "noParams", new RpcRequestObjectTypes() { FunctionWrapperType = typeof(Test) });
-            _rpcServer.Bind(methodName: "simpleParams", new RpcRequestObjectTypes() { FunctionWrapperType = typeof(Test), RequestParameterType = typeof(TestRequestList) });
-            _rpcServer.Bind(methodName: "namedParams", new RpcRequestObjectTypes() { FunctionWrapperType = typeof(Test), RequestParameterType = typeof(TestRequestMap) });
-            _rpcServer.Bind(methodName: "nullResponse", new RpcRequestObjectTypes() { FunctionWrapperType = typeof(Test) });
+            _rpcServer.Bind();
+            // _rpcServer.Bind(methodName: "noParams", new RpcRequestObjectTypes() { FunctionWrapperType = typeof(Test) });
+            // _rpcServer.Bind(methodName: "simpleParams", new RpcRequestObjectTypes() { FunctionWrapperType = typeof(Test), RequestParameterType = typeof(TestRequestList) });
+            // _rpcServer.Bind(methodName: "namedParams", new RpcRequestObjectTypes() { FunctionWrapperType = typeof(Test), RequestParameterType = typeof(TestRequestMap) });
+            // _rpcServer.Bind(methodName: "nullResponse", new RpcRequestObjectTypes() { FunctionWrapperType = typeof(Test) });
 
             var _rpcClient = new RpcClient(amqpNodeAddress: "amq.topic/test", connection: _connection);
-            _rpcClient.Timeout = 1;
             _rpcClient.Connect();
             try
             {
@@ -46,6 +46,7 @@ namespace AmqpNetLiteRpcConsole
         }
     }
 
+    [RpcMethodParameter]
     [AmqpContract(Encoding = EncodingType.SimpleList)]
     public class TestRequestList
     {
@@ -55,6 +56,7 @@ namespace AmqpNetLiteRpcConsole
         public string lastName { get; set; }
     }
 
+    [RpcMethodParameter]
     [AmqpContract(Encoding = EncodingType.SimpleMap)]
     public class TestRequestMap
     {
@@ -66,24 +68,28 @@ namespace AmqpNetLiteRpcConsole
 
     class Test
     {
+        [RpcMethod]
         public TestRequestMap noParams()
         {
             return new TestRequestMap() { firstName = "123", lastName = "456" };
         }
 
+        [RpcMethod]
         public TestRequestMap simpleParams(TestRequestList request)
         {
             return new TestRequestMap() { firstName = "123", lastName = "456" };
         }
 
+        [RpcMethod]
         public TestRequestMap namedParams(TestRequestMap request)
         {
             return new TestRequestMap() { firstName = "123", lastName = "456" };
         }
 
+        [RpcMethod]
         public void nullResponse()
         {
-            
+
         }
     }
 }
