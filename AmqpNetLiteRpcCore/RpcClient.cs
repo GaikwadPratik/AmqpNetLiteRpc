@@ -138,7 +138,7 @@ namespace AmqpNetLiteRpcCore
         {
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
-                .WriteTo.File(Path.Combine("logs", "AmqpNetLiteRpcServerLogs.txt"), rollOnFileSizeLimit: true)
+                .WriteTo.File(Path.Combine("logs", "AmqpNetLiteRpcClientLogs.txt"), rollOnFileSizeLimit: true)
                 .CreateLogger();
             var nodeAddress = Utility.ParseRpcNodeAddress(this._amqpNode);
             this._amqpNode = nodeAddress.Address;
