@@ -28,6 +28,13 @@ namespace AmqpNetLiteRpcCore
         }
     }
 
+    public class AmqpRpcMissingAttributeException : Exception
+    {
+        public string Code = ErrorCode.AmqpRpcMissingAttributeException;
+        public AmqpRpcMissingAttributeException(string message) : base(message)
+        { }
+    }
+
     [AmqpContract(Encoding = EncodingType.SimpleMap)]
     public class AmqpRpcServerException
     {

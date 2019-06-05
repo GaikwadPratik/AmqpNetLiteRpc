@@ -15,5 +15,6 @@ namespace AmqpNetLiteRpcCore
         public const string AmqpRpcFunctionDefinitionValidationError = "AmqpRpcFunctionDefinitionValidationError";
         public const string AmqpRpcInvalidNodeAddressException = "AmqpRpcInvalidNodeAddressException";
         public const string AmqpRpcInvalidRpcTypeException = "AmqpRpcInvalidRpcTypeException";
+        public const string AmqpRpcMissingAttributeException = "AmqpRpcMissingAttributeException";
     }
 }
