@@ -1,6 +1,7 @@
 ﻿using Amqp;
 using Amqp.Serialization;
 using AmqpNetLiteRpcCore;
+using Newtonsoft.Json;
 using System;
 using System.Threading.Tasks;
 
@@ -11,8 +12,7 @@ namespace AmqpNetLiteRpcConsole
         public static async Task Main(string[] args)
         {
             Console.WriteLine("Hello World!");
-            //string connectionString = "amqp://system:manager@192.168.122.2:5672";
-            Address _address = new Address(host: "192.168.122.2", port: 5672, user: "system", password: "manager", scheme: "amqp");
+            Address _address = new Address(host: "192.168.122.2", port: 5672, user: "", password: "", scheme: "amqp");
             ConnectionFactory _connFactory = new ConnectionFactory();
             //_connFactory.SSL.ClientCertificates 
             Connection _connection = await _connFactory.CreateAsync(_address);
@@ -21,7 +21,24 @@ namespace AmqpNetLiteRpcConsole
             _rpcServer.Bind(methodName: "noParams", new RpcRequestObjectTypes() { FunctionWrapperType = typeof(Test) });
             _rpcServer.Bind(methodName: "simpleParams", new RpcRequestObjectTypes() { FunctionWrapperType = typeof(Test), RequestParameterType = typeof(TestRequestList) });
             _rpcServer.Bind(methodName: "namedParams", new RpcRequestObjectTypes() { FunctionWrapperType = typeof(Test), RequestParameterType = typeof(TestRequestMap) });
-            //rpcServer.Disconnect();
+
+            var _rpcClient = new RpcClient(amqpNodeAddress: "amq.topic/test", connection: _connection);
+            _rpcClient.MessageTimeout = 1;
+            _rpcClient.Connect();
+            try
+            {
+                var c = await _rpcClient.Call<TestRequestMap>("noParams");
+                Console.WriteLine(JsonConvert.SerializeObject(c));
+                c = await _rpcClient.Call<TestRequestMap>("simpleParams", new TestRequestList() { firstName = "123", lastName = "456" });
+                Console.WriteLine(JsonConvert.SerializeObject(c));
+                c = await _rpcClient.Call<TestRequestMap>("namedParams", new TestRequestMap() { firstName = "123", lastName = "456" });
+                Console.WriteLine(JsonConvert.SerializeObject(c));
+                await _rpcClient.Call<TestRequestMap>("namedParams");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
             Console.ReadLine();
         }
     }
@@ -29,9 +46,9 @@ namespace AmqpNetLiteRpcConsole
     [AmqpContract(Encoding = EncodingType.SimpleList)]
     public class TestRequestList
     {
-        [AmqpMember(Order = 1)]
+        [AmqpMember]
         public string firstName { get; set; }
-        [AmqpMember(Order = 2)]
+        [AmqpMember]
         public string lastName { get; set; }
     }
 
@@ -46,19 +63,19 @@ namespace AmqpNetLiteRpcConsole
 
     class Test
     {
-        public string noParams()
+        public TestRequestMap noParams()
         {
-            return $"123 456";
+            return new TestRequestMap() { firstName = "123", lastName = "456" };
         }
 
-        public string simpleParams(TestRequestList request)
+        public TestRequestMap simpleParams(TestRequestList request)
         {
-            return $"{request.firstName} {request.lastName}";
+            return new TestRequestMap() { firstName = "123", lastName = "456" };
         }
 
-        public string namedParams(TestRequestMap request)
+        public TestRequestMap namedParams(TestRequestMap request)
         {
-            return $"{request.firstName} {request.lastName}";
+            return new TestRequestMap() { firstName = "123", lastName = "456" };
         }
     }
 }
