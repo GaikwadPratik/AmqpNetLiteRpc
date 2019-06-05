@@ -10,7 +10,7 @@ using Serilog;
 
 namespace AmqpNetLiteRpcCore
 {
-    public class RpcClient
+    public class RpcClient: RpcBase
     {
         private Connection _connection = null;
         private Session _session = null;
@@ -79,11 +79,11 @@ namespace AmqpNetLiteRpcCore
                     var _response = await receiverWaitTask.TimeoutAfter(timeout: unchecked((int)this._timeout));
                     if (_response.ResponseCode.Equals(RpcResponseType.Ok))
                     {
-                        return new Utility().GetRequestMessage(deserializationType: typeof(T), _response.ResponseMessage);
+                        return this.GetRequestMessage(deserializationType: typeof(T), _response.ResponseMessage);
                     }
                     else if (_response.ResponseCode.Equals(RpcResponseType.Error))
                     {
-                        var _err = new Utility().GetRequestMessage(deserializationType: typeof(AmqpRpcServerException), _response.ResponseMessage) as AmqpRpcServerException;
+                        var _err = this.GetRequestMessage(deserializationType: typeof(AmqpRpcServerException), _response.ResponseMessage) as AmqpRpcServerException;
                         throw new AmqpRpcException(_err.Message, _err.Stack, _err.Code);
                     }
                 }
@@ -140,7 +140,7 @@ namespace AmqpNetLiteRpcCore
                 .MinimumLevel.Debug()
                 .WriteTo.File(Path.Combine("logs", "AmqpNetLiteRpcClientLogs.txt"), rollOnFileSizeLimit: true)
                 .CreateLogger();
-            var nodeAddress = Utility.ParseRpcNodeAddress(this._amqpNode);
+            var nodeAddress = this.ParseRpcNodeAddress(this._amqpNode);
             this._amqpNode = nodeAddress.Address;
             if (!string.IsNullOrEmpty(nodeAddress.Subject))
             {

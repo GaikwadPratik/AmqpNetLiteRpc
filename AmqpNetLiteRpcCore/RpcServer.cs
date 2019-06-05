@@ -14,7 +14,7 @@ using Newtonsoft.Json;
 
 namespace AmqpNetLiteRpcCore
 {
-    public class RpcServer
+    public class RpcServer: RpcBase
     {
         private Connection _connection = null;
         private Session _session = null;
@@ -74,7 +74,7 @@ namespace AmqpNetLiteRpcCore
                     return;
                 }
 
-                var _methodParameter = new Utility().GetRequestMessage(deserializationType: _requestObjectType.Value.RequestParameterType, parameters: _rpcRequest.Parameters);
+                var _methodParameter = this.GetRequestMessage(deserializationType: _requestObjectType.Value.RequestParameterType, parameters: _rpcRequest.Parameters);
                 var _classInstance = Activator.CreateInstance(_requestObjectType.Value.FunctionWrapperType);
                 MethodInfo _method = _requestObjectType.Value.FunctionWrapperType.GetMethod(_requestObjectType.Key);
                 try
@@ -235,7 +235,7 @@ namespace AmqpNetLiteRpcCore
                 .MinimumLevel.Debug()
                 .WriteTo.File(Path.Combine("logs", "AmqpNetLiteRpcServerLogs.txt"), rollOnFileSizeLimit: true)
                 .CreateLogger();
-            var nodeAddress = Utility.ParseRpcNodeAddress(this._amqpNode);
+            var nodeAddress = this.ParseRpcNodeAddress(this._amqpNode);
             Attach _attach = new Attach();
             _attach.Target = new Target();
             Source _source = new Source()
