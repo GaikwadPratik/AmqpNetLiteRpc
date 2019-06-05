@@ -24,7 +24,7 @@ namespace AmqpNetLiteRpcConsole
             _rpcServer.Bind(methodName: "nullResponse", new RpcRequestObjectTypes() { FunctionWrapperType = typeof(Test) });
 
             var _rpcClient = new RpcClient(amqpNodeAddress: "amq.topic/test", connection: _connection);
-            _rpcClient.MessageTimeout = 1;
+            _rpcClient.Timeout = 1;
             _rpcClient.Connect();
             try
             {
