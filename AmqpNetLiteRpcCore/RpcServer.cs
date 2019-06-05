@@ -159,20 +159,73 @@ namespace AmqpNetLiteRpcCore
             }
         }
 
+        private void VerifyAttributeExistance(ParameterInfo param)
+        {
+            if (param == null)
+            {
+                return;
+            }
+            if (param.ParameterType.GetCustomAttribute(typeof(RpcMethodParameterAttribute)) == null)
+            {
+                throw new AmqpRpcMissingAttributeException($"Attribute 'RpcMethodParameter' is missing on parameter {param.ParameterType.Name}");
+            }
+            if (param.ParameterType.GetCustomAttribute(typeof(AmqpContractAttribute)) == null)
+            {
+                throw new AmqpRpcMissingAttributeException($"Attribute 'AmqpContract' is missing on parameter {param.ParameterType.Name}");
+            }
+            var _paramField = param.ParameterType.GetProperties().FirstOrDefault(x => x.GetCustomAttribute(typeof(AmqpMemberAttribute)) == null);
+            if (_paramField != null)
+            {
+                throw new AmqpRpcMissingAttributeException($"Attribute 'AmqpMember' is missing on field {_paramField.PropertyType.Name} in {param.ParameterType.Name}");
+            }
+        }
+
+        public void Bind()
+        {
+            var _methods = Assembly.GetCallingAssembly()
+                                        .GetTypes()
+                                        .SelectMany(_type => _type.GetMethods(BindingFlags.Public | BindingFlags.Instance))
+                                        .Where(_method => _method.GetCustomAttributes().OfType<RpcMethodAttribute>().Any())
+                                        .ToList();
+
+            foreach (var _method in _methods)
+            {
+                var _params = _method.GetParameters();
+                if (_params.Length > 1)
+                {
+                    throw new NotSupportedException($"RPC function with more than one parameter is not supported: {_method.Name}");
+                }
+                var _param = _params.FirstOrDefault();
+                var _requestObjectTypes = new RpcRequestObjectTypes()
+                {
+                    FunctionWrapperType = _method.DeclaringType,
+                    RequestParameterType = _param != null ? _param.ParameterType : null
+                };
+                this.Bind(_method.Name, _requestObjectTypes);
+            }
+        }
+
         public void Bind(string methodName, RpcRequestObjectTypes requestObjectTypes)
         {
             if (string.IsNullOrEmpty(methodName))
             {
                 throw new AmqpRpcMissingFunctionNameException("Function name is missing during definition binding");
             }
-            if (!requestObjectTypes.FunctionWrapperType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly).Any(x => x.Name.Equals(methodName)))
-            {
-                throw new AmqpRpcUnknownFunctionException($"{methodName} is not found in {requestObjectTypes.FunctionWrapperType.Name}");
-            }
             if (this._serverFunctions.ContainsKey(methodName))
             {
                 throw new AmqpRpcDuplicateFunctionDefinitionException($"{methodName} is already bound to RPC server");
             }
+            if (!requestObjectTypes.FunctionWrapperType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly).Any(x => x.Name.Equals(methodName)))
+            {
+                throw new AmqpRpcUnknownFunctionException($"{methodName} is not found in {requestObjectTypes.FunctionWrapperType.Name}");
+            }
+            var _methodInfo = requestObjectTypes.FunctionWrapperType.GetMethod(methodName);
+            var _params = _methodInfo.GetParameters();
+            if (_params.Length > 1)
+            {
+                throw new NotSupportedException($"RPC function with more than one parameter is not supported: {methodName}");
+            }
+            this.VerifyAttributeExistance(_params.FirstOrDefault());
             this._serverFunctions.Add(methodName, requestObjectTypes);
         }
 
