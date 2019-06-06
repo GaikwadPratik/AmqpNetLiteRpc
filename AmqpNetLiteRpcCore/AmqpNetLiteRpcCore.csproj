@@ -3,6 +3,10 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>7.3</LangVersion>
+    <Authors>Pratik Gaikwad</Authors>
+    <Description />
+    <RepositoryUrl>https://github.com/GaikwadPratik/AmqpNetLiteRpc.git</RepositoryUrl>
+    <PackageTags>AMQPNetLiteRpc,AMQPNetLite,Rpc,Amqp10,Amqp10-rpc,amqp1.0,amqp-1-0</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
