@@ -14,25 +14,23 @@ using Newtonsoft.Json;
 
 namespace AmqpNetLiteRpcCore
 {
-    public class RpcServer: RpcBase
+    internal class RpcServer: RpcBase, IRpcServer
     {
-        private Connection _connection = null;
-        private Session _session = null;
-        private SenderLink _sender = null;
-        private ReceiverLink _receiver = null;
+        private ISession _session = null;
+        private ISenderLink _sender = null;
+        private IReceiverLink _receiver = null;
         private string _subject = string.Empty;
         private string _amqpNode = string.Empty;
 
-        private Dictionary<string, RpcRequestObjectTypes> _serverFunctions = new Dictionary<string, RpcRequestObjectTypes>();
+        private Dictionary<string, RpcRequestObjectType> _serverFunctions = new Dictionary<string, RpcRequestObjectType>();
 
-        public RpcServer(string amqpNodeAddress, Connection connection)
+        public RpcServer(string amqpNodeAddress, ISession session)
         {
             this._amqpNode = amqpNodeAddress;
-            this._connection = connection;
-            this._session = new Session(this._connection);
+            this._session = session;
         }
 
-        private async void ProcessIncomingRpcRequest(IReceiverLink receiver, Message message)
+        private async void ProcessIncomingRpcRequestAsync(IReceiverLink receiver, Message message)
         {
             //Accept the message since we would be replying using sender, hence disposition does not make sense
             receiver.Accept(message);
@@ -51,26 +49,26 @@ namespace AmqpNetLiteRpcCore
                 if (!_rpMethodTypes.Contains(_rpcRequest.Type))
                 {
                     Log.Error($"Invalid request type received: {_rpcRequest.Type}");
-                    await this.SendResponse(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: null, ex: new AmqpRpcInvalidRpcTypeException(_rpcRequest.Type));
+                    await this.SendResponseAsync(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: null, ex: new AmqpRpcInvalidRpcTypeException(_rpcRequest.Type));
                     return;
                 }
                 if (string.IsNullOrEmpty(_rpcRequest.Method))
                 {
                     Log.Error("Missing RPC function call name: {@_rpcRequest}", _rpcRequest);
-                    await this.SendResponse(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: null, ex: new AmqpRpcMissingFunctionNameException(JsonConvert.SerializeObject(_rpcRequest)));
+                    await this.SendResponseAsync(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: null, ex: new AmqpRpcMissingFunctionNameException(JsonConvert.SerializeObject(_rpcRequest)));
                     return;
                 }
                 if (!this._serverFunctions.ContainsKey(_rpcRequest.Method))
                 {
                     Log.Error($"Unknown RPC method request received: {_rpcRequest.Method}");
-                    await this.SendResponse(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: null, ex: new AmqpRpcUnknownFunctionException($"{_rpcRequest.Method} is not bound to remote server"));
+                    await this.SendResponseAsync(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: null, ex: new AmqpRpcUnknownFunctionException($"{_rpcRequest.Method} is not bound to remote server"));
                     return;
                 }
                 var _requestObjectType = this._serverFunctions.SingleOrDefault(x => x.Key.Equals(_rpcRequest.Method));
                 if (_requestObjectType.Value == null)
                 {
                     Log.Error($"Unknown RPC method request received: {_rpcRequest.Method}");
-                    await this.SendResponse(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: null, ex: new AmqpRpcUnknownFunctionException($"{_rpcRequest.Method} is not bound to remote server"));
+                    await this.SendResponseAsync(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: null, ex: new AmqpRpcUnknownFunctionException($"{_rpcRequest.Method} is not bound to remote server"));
                     return;
                 }
 
@@ -84,16 +82,16 @@ namespace AmqpNetLiteRpcCore
                         //TODO: check for missing properties from rpc calls
                         //await this.SendResponse(replyTo: _replyTo, correlationId: _correlationId, _rpcRequest.type, null, new AmqpRpcUnknowParameterException($"{_rpcRequest.method} invokation failed, mismatch in parameter"));
                         object _rtnVal = _method.Invoke(_classInstance, new[] { _methodParameter });
-                        await this.SendResponse(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: _rtnVal, ex: null);
+                        await this.SendResponseAsync(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: _rtnVal, ex: null);
                     }
                     else if (_methodParameter is null && _method.GetParameters().Length.Equals(0))
                     {
                         object _rtnVal = _method.Invoke(_classInstance, null);
-                        await this.SendResponse(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: _rtnVal, ex: null);
+                        await this.SendResponseAsync(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: _rtnVal, ex: null);
                     }
                     else
                     {
-                        await this.SendResponse(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: null, ex: new AmqpRpcUnknowParameterException($"{_rpcRequest.Method} invocation failed, mismatch in parameter"));
+                        await this.SendResponseAsync(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: null, ex: new AmqpRpcUnknowParameterException($"{_rpcRequest.Method} invocation failed, mismatch in parameter"));
                     }
                 }
                 catch (Exception ex)
@@ -105,7 +103,7 @@ namespace AmqpNetLiteRpcCore
             });
         }
 
-        private async Task SendResponse(string replyTo, string correlationId, string requestType, object response, Exception ex)
+        private async Task SendResponseAsync(string replyTo, string correlationId, string requestType, object response, Exception ex)
         {
             if (requestType.Equals(RpcRequestType.Notify))
             {
@@ -131,7 +129,7 @@ namespace AmqpNetLiteRpcCore
             }
 
             Message _message = new Message() { BodySection = new AmqpValue<AmqpRpcResponse>(_response) };
-            this._sender = new SenderLink(session: this._session, name: "AmqpNetLiteRpcServerSender", address: replyTo);
+            this._sender = this._session.CreateSender(name: "AmqpNetLiteRpcServerSender", address: replyTo);
             _message.Properties = new Properties()
             {
                 CorrelationId = correlationId,
@@ -196,7 +194,7 @@ namespace AmqpNetLiteRpcCore
                     throw new NotSupportedException($"RPC function with more than one parameter is not supported: {_method.Name}");
                 }
                 var _param = _params.FirstOrDefault();
-                var _requestObjectTypes = new RpcRequestObjectTypes()
+                var _requestObjectTypes = new RpcRequestObjectType()
                 {
                     FunctionWrapperType = _method.DeclaringType,
                     RequestParameterType = _param != null ? _param.ParameterType : null
@@ -205,39 +203,37 @@ namespace AmqpNetLiteRpcCore
             }
         }
 
-        public void Bind(string methodName, RpcRequestObjectTypes requestObjectTypes)
+        public void Bind(string functionName, RpcRequestObjectType requestObjectTypes)
         {
-            if (string.IsNullOrEmpty(methodName))
+            if (string.IsNullOrEmpty(functionName))
             {
                 throw new AmqpRpcMissingFunctionNameException("Function name is missing during definition binding");
             }
-            if (this._serverFunctions.ContainsKey(methodName))
+            if (this._serverFunctions.ContainsKey(functionName))
             {
-                throw new AmqpRpcDuplicateFunctionDefinitionException($"{methodName} is already bound to RPC server");
+                throw new AmqpRpcDuplicateFunctionDefinitionException($"{functionName} is already bound to RPC server");
             }
-            if (!requestObjectTypes.FunctionWrapperType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly).Any(x => x.Name.Equals(methodName)))
+            if (!requestObjectTypes.FunctionWrapperType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly).Any(x => x.Name.Equals(functionName)))
             {
-                throw new AmqpRpcUnknownFunctionException($"{methodName} is not found in {requestObjectTypes.FunctionWrapperType.Name}");
+                throw new AmqpRpcUnknownFunctionException($"{functionName} is not found in {requestObjectTypes.FunctionWrapperType.Name}");
             }
-            var _methodInfo = requestObjectTypes.FunctionWrapperType.GetMethod(methodName);
+            var _methodInfo = requestObjectTypes.FunctionWrapperType.GetMethod(functionName);
             var _params = _methodInfo.GetParameters();
             if (_params.Length > 1)
             {
-                throw new NotSupportedException($"RPC function with more than one parameter is not supported: {methodName}");
+                throw new NotSupportedException($"RPC function with more than one parameter is not supported: {functionName}");
             }
             this.VerifyAttributeExistance(_params.FirstOrDefault());
-            this._serverFunctions.Add(methodName, requestObjectTypes);
+            this._serverFunctions.Add(functionName, requestObjectTypes);
         }
 
-        public void Connect()
+        public void Create()
         {
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .WriteTo.File(Path.Combine("logs", "AmqpNetLiteRpcServerLogs.txt"), rollOnFileSizeLimit: true)
                 .CreateLogger();
             var nodeAddress = this.ParseRpcNodeAddress(this._amqpNode);
-            Attach _attach = new Attach();
-            _attach.Target = new Target();
             Source _source = new Source()
             {
                 Address = nodeAddress.Address
@@ -250,13 +246,12 @@ namespace AmqpNetLiteRpcCore
                     new Symbol("apache.org:legacy-amqp-topic-binding:string"),
                     this._subject);
             }
-            _attach.Source = _source;
-            this._receiver = new ReceiverLink(session: this._session, name: "AmqpNetLiteRpcServerReceiver", attach: _attach, onAttached: OnReceiverLinkAttached);
+            this._receiver = this._session.CreateReceiver(name: "AmqpNetLiteRpcServerReceiver", source: _source, onAttached: OnReceiverLinkAttached);
             this._receiver.Closed += OnReceiverLinkClosed;
-            this._receiver.Start(credit: 100, onMessage: ProcessIncomingRpcRequest);
+            this._receiver.Start(credit: 100, onMessage: ProcessIncomingRpcRequestAsync);
         }
 
-        public async void Disconnect()
+        public async Task DestroyAsync()
         {
             if (this._receiver != null && !this._receiver.IsClosed)
             {

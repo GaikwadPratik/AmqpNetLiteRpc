@@ -17,7 +17,7 @@ namespace AmqpNetLiteRpcCore
 
     public static class Extensions
     {
-        public static async Task<TResult> TimeoutAfter<TResult>(this Task<TResult> task, int timeout)
+        public static async Task<TResult> TimeoutAfterAsync<TResult>(this Task<TResult> task, int timeout)
         {
 
             using (var timeoutCancellationTokenSource = new CancellationTokenSource())

@@ -1,21 +1,18 @@
 using System;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Amqp;
 using Amqp.Framing;
 using Amqp.Types;
-using Newtonsoft.Json;
 using Serilog;
 
 namespace AmqpNetLiteRpcCore
 {
-    public class RpcClient: RpcBase
+    internal class RpcClient: RpcBase, IRpcClient
     {
-        private Connection _connection = null;
-        private Session _session = null;
-        private SenderLink _sender = null;
-        private ReceiverLink _receiver = null;
+        private ISession _session = null;
+        private ISenderLink _sender = null;
+        private IReceiverLink _receiver = null;
         private string _subject = string.Empty;
         private string _amqpNode = string.Empty;
         private string _clientReceiveAddress = string.Empty;
@@ -35,11 +32,10 @@ namespace AmqpNetLiteRpcCore
             }
         }
 
-        public RpcClient(string amqpNodeAddress, Connection connection)
+        public RpcClient(string amqpNodeAddress, ISession session)
         {
             this._amqpNode = amqpNodeAddress;
-            this._connection = connection;
-            this._session = new Session(this._connection);
+            this._session = session;
         }
 
         private void OnReceiverLinkAttached(ILink _link, Attach attach)
@@ -54,7 +50,7 @@ namespace AmqpNetLiteRpcCore
             Log.Information($"RpcClient sender is connected to {this._amqpNode}{(!string.IsNullOrEmpty(this._subject) ? string.Format("/{0}", this._subject) : string.Empty)}");
         }
 
-        private async Task<T> SendRequest<T>(AmqpRpcRequest request) where T : class
+        private async Task<T> SendRequestAsync<T>(AmqpRpcRequest request) where T : class
         {
             var _message = new Message() { BodySection = new AmqpValue<AmqpRpcRequest>(request) };
             var id = Guid.NewGuid().ToString();
@@ -76,7 +72,7 @@ namespace AmqpNetLiteRpcCore
                 var receiverWaitTask = Task.Run<AmqpRpcResponse>(function: this.processResponse);
                 try
                 {
-                    var _response = await receiverWaitTask.TimeoutAfter(timeout: unchecked((int)this._timeout));
+                    var _response = await receiverWaitTask.TimeoutAfterAsync(timeout: unchecked((int)this._timeout));
                     if (_response.ResponseCode.Equals(RpcResponseType.Ok))
                     {
                         return this.GetRequestMessage(deserializationType: typeof(T), _response.ResponseMessage);
@@ -110,7 +106,7 @@ namespace AmqpNetLiteRpcCore
             }
         }
 
-        public async Task<T> Call<T>(string functionName, object parameter = null) where T : class
+        public async Task<T> CallAsync<T>(string functionName, object parameter = null) where T : class
         {
             var request = new AmqpRpcRequest()
             {
@@ -119,10 +115,10 @@ namespace AmqpNetLiteRpcCore
                 Type = RpcRequestType.Call
             };
 
-            return await this.SendRequest<T>(request);
+            return await this.SendRequestAsync<T>(request);
         }
 
-        public async Task Notify(string functionName, object parameter = null)
+        public async Task NotifyAsync(string functionName, object parameter = null)
         {
             var request = new AmqpRpcRequest()
             {
@@ -131,15 +127,18 @@ namespace AmqpNetLiteRpcCore
                 Type = RpcRequestType.Call
             };
 
-            await this.SendRequest<object>(request);
+            await this.SendRequestAsync<object>(request);
         }
 
-        public void Connect()
+        public void Create(IMessageOptions options = null)
         {
-            Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Debug()
-                .WriteTo.File(Path.Combine("logs", "AmqpNetLiteRpcClientLogs.txt"), rollOnFileSizeLimit: true)
-                .CreateLogger();
+            if (options != null)
+            {
+                if (options.Timeout > 0)
+                {
+                    this._timeout = options.Timeout;
+                }
+            }
             var nodeAddress = this.ParseRpcNodeAddress(this._amqpNode);
             this._amqpNode = nodeAddress.Address;
             if (!string.IsNullOrEmpty(nodeAddress.Subject))
@@ -153,15 +152,15 @@ namespace AmqpNetLiteRpcCore
                 Address = nodeAddress.Address
             };
 
-            this._receiver = new ReceiverLink(session: this._session, name: "AmqpNetLiteRpcClientReceiver", source: _receiverSource, onAttached: OnReceiverLinkAttached);
-            this._sender = new SenderLink(session: this._session, name: "AmqpNetLiteRpcClientSender", target: new Target(), onAttached: OnSenderLinkAttached);
+            this._receiver = this._session.CreateReceiver(name: "AmqpNetLiteRpcClientReceiver", source: _receiverSource, onAttached: OnReceiverLinkAttached);
+            this._sender = this._session.CreateSender(name: "AmqpNetLiteRpcClientSender", target: new Target(), onAttached: OnSenderLinkAttached);
             if (!_receiverAttached.WaitOne(this._receiverAttacheTimeout))
             {
                 throw new Exception($"Failed to create receiver connection in {this._receiverAttacheTimeout}");
             }
         }
 
-        public async void Disconnect()
+        public async Task DestroyAsync()
         {
             if (this._receiver != null && !this._receiver.IsClosed)
             {
