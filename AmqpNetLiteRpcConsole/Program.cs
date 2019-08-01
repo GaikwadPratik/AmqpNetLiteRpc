@@ -12,31 +12,31 @@ namespace AmqpNetLiteRpcConsole
         public static async Task Main(string[] args)
         {
             Console.WriteLine("Hello World!");
-            Address _address = new Address(host: "192.168.122.2", port: 5672, user: "", password: "", scheme: "amqp");
+            Address _address = new Address(host: "192.168.122.2", port: 5672, user: "system", password: "manager", scheme: "amqp");
             ConnectionFactory _connFactory = new ConnectionFactory();
             //_connFactory.SSL.ClientCertificates 
             Connection _connection = await _connFactory.CreateAsync(_address);
-            RpcServer _rpcServer = new RpcServer(amqpNodeAddress: "amq.topic/test", connection: _connection);
-            _rpcServer.Connect();
+            var _amqpClient = new AmqpClient();
+            _amqpClient.InitiateAmqpRpc(connection: _connection);
+            IRpcServer _rpcServer = _amqpClient.CreateAmqpRpcServer(amqpNode: "amq.topic/test");
             _rpcServer.Bind();
-            // _rpcServer.Bind(methodName: "noParams", new RpcRequestObjectTypes() { FunctionWrapperType = typeof(Test) });
-            // _rpcServer.Bind(methodName: "simpleParams", new RpcRequestObjectTypes() { FunctionWrapperType = typeof(Test), RequestParameterType = typeof(TestRequestList) });
-            // _rpcServer.Bind(methodName: "namedParams", new RpcRequestObjectTypes() { FunctionWrapperType = typeof(Test), RequestParameterType = typeof(TestRequestMap) });
-            // _rpcServer.Bind(methodName: "nullResponse", new RpcRequestObjectTypes() { FunctionWrapperType = typeof(Test) });
+            // _rpcServer.Bind(functionName: "noParams", new RpcRequestObjectType() { FunctionWrapperType = typeof(Test) });
+            // _rpcServer.Bind(functionName: "simpleParams", new RpcRequestObjectType() { FunctionWrapperType = typeof(Test), RequestParameterType = typeof(TestRequestList) });
+            // _rpcServer.Bind(functionName: "namedParams", new RpcRequestObjectType() { FunctionWrapperType = typeof(Test), RequestParameterType = typeof(TestRequestMap) });
+            // _rpcServer.Bind(functionName: "nullResponse", new RpcRequestObjectType() { FunctionWrapperType = typeof(Test) });
 
-            var _rpcClient = new RpcClient(amqpNodeAddress: "amq.topic/test", connection: _connection);
-            _rpcClient.Connect();
+            IRpcClient _rpcClient = _amqpClient.CreateAmqpRpcClient(amqpNode: "amq.topic/test");
             try
             {
-                var c = await _rpcClient.Call<TestRequestMap>("noParams");
+                var c = await _rpcClient.CallAsync<TestRequestMap>(functionName: "noParams");
                 Console.WriteLine(JsonConvert.SerializeObject(c));
-                c = await _rpcClient.Call<TestRequestMap>("simpleParams", new TestRequestList() { firstName = "123", lastName = "456" });
+                c = await _rpcClient.CallAsync<TestRequestMap>(functionName: "simpleParams", parameter: new TestRequestList() { firstName = "123", lastName = "456" });
                 Console.WriteLine(JsonConvert.SerializeObject(c));
-                c = await _rpcClient.Call<TestRequestMap>("namedParams", new TestRequestMap() { firstName = "123", lastName = "456" });
+                c = await _rpcClient.CallAsync<TestRequestMap>(functionName: "namedParams", parameter: new TestRequestMap() { firstName = "123", lastName = "456" });
                 Console.WriteLine(JsonConvert.SerializeObject(c));
-                var D = await _rpcClient.Call<object>("nullResponse");
+                var D = await _rpcClient.CallAsync<object>(functionName: "nullResponse");
                 Console.WriteLine(D is null);
-                await _rpcClient.Call<TestRequestMap>("namedParams");
+                await _rpcClient.CallAsync<TestRequestMap>(functionName: "namedParams");
             }
             catch (Exception ex)
             {
