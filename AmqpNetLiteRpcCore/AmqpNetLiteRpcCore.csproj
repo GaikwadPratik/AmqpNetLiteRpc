@@ -5,13 +5,14 @@
     <LangVersion>7.3</LangVersion>
     <Authors>Pratik Gaikwad</Authors>
     <Description />
+    <Version>1.0.2</Version>
     <RepositoryUrl>https://github.com/GaikwadPratik/AmqpNetLiteRpc.git</RepositoryUrl>
-    <PackageTags>AMQPNetLiteRpc,AMQPNetLite,Rpc,Amqp10,Amqp10-rpc,amqp1.0,amqp-1-0</PackageTags>
+    <PackageTags>AMQPNetLiteRpc,AMQPNetLite,Rpc,amqp10,amqp10-rpc,amqp1.0,amqp-1-0,amqp </PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AMQPNetLite" Version="2.1.7" />
-    <PackageReference Include="AMQPNetLite.Serialization" Version="2.1.7" />
+    <PackageReference Include="AMQPNetLite" Version="2.1.8" />
+    <PackageReference Include="AMQPNetLite.Serialization" Version="2.1.8" />
     <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
     <PackageReference Include="Serilog" Version="2.8.0" />
