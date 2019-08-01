@@ -7,7 +7,7 @@ using Serilog;
 
 namespace AmqpNetLiteRpcCore
 {
-    public class RpcBase
+    internal class RpcBase
     {
         public AmqpRpcNode ParseRpcNodeAddress(string nodeAddress)
         {
