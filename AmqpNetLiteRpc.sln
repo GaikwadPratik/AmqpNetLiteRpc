@@ -7,8 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AmqpNetLiteRpcCore", "AmqpN
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AmqpNetLiteRpcConsole", "AmqpNetLiteRpcConsole\AmqpNetLiteRpcConsole.csproj", "{40048922-F48A-411D-898E-63B4656740F1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AmqpNetFConsole", "AmqpNetFConsole\AmqpNetFConsole.csproj", "{963003D8-9C72-4A1B-987B-D0FBC459002B}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
