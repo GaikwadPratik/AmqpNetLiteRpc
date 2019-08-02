@@ -122,6 +122,7 @@ namespace AmqpNetLiteRpcCore
 
         private void processResponse(IReceiverLink receiver, Message message)
         {
+            receiver.Accept(message);
             if (!this._pendingRequests.TryRemove(message.Properties.CorrelationId, out var tcs))
             {
                 Console.WriteLine($"No pending response for {message.Properties.CorrelationId}");
