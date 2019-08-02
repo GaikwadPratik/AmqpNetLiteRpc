@@ -72,7 +72,7 @@ namespace AmqpNetLiteRpcCore
                     return;
                 }
 
-                var _methodParameter = this.GetRequestMessage(deserializationType: _requestObjectType.Value.RequestParameterType, parameters: _rpcRequest.Parameters);
+                var _methodParameter = this.PeeloutAmqpWrapper(deserializationType: _requestObjectType.Value.RequestParameterType, parameters: _rpcRequest.Parameters);
                 var _classInstance = Activator.CreateInstance(_requestObjectType.Value.FunctionWrapperType);
                 MethodInfo _method = _requestObjectType.Value.FunctionWrapperType.GetMethod(_requestObjectType.Key);
                 try
@@ -129,23 +129,29 @@ namespace AmqpNetLiteRpcCore
             }
 
             Message _message = new Message() { BodySection = new AmqpValue<AmqpRpcResponse>(_response) };
-            this._sender = this._session.CreateSender(name: "AmqpNetLiteRpcServerSender", address: replyTo);
+            // this._sender = this._session.CreateSender(name: "AmqpNetLiteRpcServerSender", address: replyTo);
             _message.Properties = new Properties()
             {
                 CorrelationId = correlationId,
                 Subject = this._subject,
+                To = replyTo
             };
             _message.Header = new Header()
             {
                 Ttl = 10000
             };
             await this._sender.SendAsync(message: _message);
-            await this._sender.CloseAsync();
+            //await this._sender.DetachAsync(error: null);
         }
 
         private void OnReceiverLinkAttached(ILink _link, Attach attach)
         {
             Log.Information($"RpcServer receiver is connected to {this._amqpNode}");
+        }
+
+        private void OnSenderLinkAttached(ILink _link, Attach attach)
+        {
+            Log.Information($"RpcServer sender is connected to {this._amqpNode}");
         }
 
         private void OnReceiverLinkClosed(IAmqpObject sender, Error error)
@@ -246,7 +252,8 @@ namespace AmqpNetLiteRpcCore
                     new Symbol("apache.org:legacy-amqp-topic-binding:string"),
                     this._subject);
             }
-            this._receiver = this._session.CreateReceiver(name: "AmqpNetLiteRpcServerReceiver", source: _source, onAttached: OnReceiverLinkAttached);
+            this._receiver = this._session.CreateReceiver(name: $"AmqpNetLiteRpcServerReceiver-{this._amqpNode}", source: _source, onAttached: OnReceiverLinkAttached);
+            this._sender = this._session.CreateSender(name: $"AmqpNetLiteRpcServerSender-{this._amqpNode}", target: new Target(), onAttached: this.OnSenderLinkAttached);
             this._receiver.Closed += OnReceiverLinkClosed;
             this._receiver.Start(credit: 100, onMessage: ProcessIncomingRpcRequestAsync);
         }

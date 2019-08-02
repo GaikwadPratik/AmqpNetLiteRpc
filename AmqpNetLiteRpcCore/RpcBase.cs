@@ -33,7 +33,7 @@ namespace AmqpNetLiteRpcCore
         /// <param name="deserializationType">Type into which object parameters must be converted</param>
         /// <param name="parameters">Input received at AmqpRequest.body.params</param>
         /// <returns>Deserialized object which will be used as an input to Rpc Method</returns>
-        public dynamic GetRequestMessage(Type deserializationType, object parameters)
+        public dynamic PeeloutAmqpWrapper(Type deserializationType, object parameters)
         {
             try
             {

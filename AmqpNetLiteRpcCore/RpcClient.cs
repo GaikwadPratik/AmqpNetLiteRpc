@@ -75,11 +75,11 @@ namespace AmqpNetLiteRpcCore
                     var _response = await receiverWaitTask.TimeoutAfterAsync(timeout: unchecked((int)this._timeout));
                     if (_response.ResponseCode.Equals(RpcResponseType.Ok))
                     {
-                        return this.GetRequestMessage(deserializationType: typeof(T), _response.ResponseMessage);
+                        return this.PeeloutAmqpWrapper(deserializationType: typeof(T), _response.ResponseMessage);
                     }
                     else if (_response.ResponseCode.Equals(RpcResponseType.Error))
                     {
-                        var _err = this.GetRequestMessage(deserializationType: typeof(AmqpRpcServerException), _response.ResponseMessage) as AmqpRpcServerException;
+                        var _err = this.PeeloutAmqpWrapper(deserializationType: typeof(AmqpRpcServerException), _response.ResponseMessage) as AmqpRpcServerException;
                         throw new AmqpRpcException(_err.Message, _err.Stack, _err.Code);
                     }
                 }
@@ -152,8 +152,8 @@ namespace AmqpNetLiteRpcCore
                 Address = nodeAddress.Address
             };
 
-            this._receiver = this._session.CreateReceiver(name: "AmqpNetLiteRpcClientReceiver", source: _receiverSource, onAttached: OnReceiverLinkAttached);
-            this._sender = this._session.CreateSender(name: "AmqpNetLiteRpcClientSender", target: new Target(), onAttached: OnSenderLinkAttached);
+            this._receiver = this._session.CreateReceiver(name: $"AmqpNetLiteRpcClientReceiver-{this._amqpNode}", source: _receiverSource, onAttached: OnReceiverLinkAttached);
+            this._sender = this._session.CreateSender(name: $"AmqpNetLiteRpcClientSender-{this._amqpNode}", target: new Target(), onAttached: OnSenderLinkAttached);
             if (!_receiverAttached.WaitOne(this._receiverAttacheTimeout))
             {
                 throw new Exception($"Failed to create receiver connection in {this._receiverAttacheTimeout}");
