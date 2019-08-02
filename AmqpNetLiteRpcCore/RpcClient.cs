@@ -1,15 +1,50 @@
 using System;
+using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using Amqp;
 using Amqp.Framing;
-using Amqp.Types;
 using Serilog;
 
 namespace AmqpNetLiteRpcCore
 {
-    internal class RpcClient: RpcBase, IRpcClient
+    internal class RpcClient : RpcBase, IRpcClient
     {
+        private interface IPendingRequest
+        {
+            void SetResult(AmqpRpcResponse response);
+            void SetError(string error);
+        }
+        private class PendingRequest<TResult> : IPendingRequest
+        {
+            private readonly TaskCompletionSource<TResult> _tcs;
+            private readonly RpcClient _client;
+
+            public PendingRequest(TaskCompletionSource<TResult> tcs, RpcClient client)
+            {
+                _client = client;
+                _tcs = tcs;
+            }
+
+            public void SetResult(AmqpRpcResponse response)
+            {
+                if (response.ResponseCode.Equals(RpcResponseType.Ok))
+                {
+                    _tcs.SetResult(_client.PeeloutAmqpWrapper(deserializationType: typeof(TResult), response.ResponseMessage));
+                }
+                else if (response.ResponseCode.Equals(RpcResponseType.Error))
+                {
+                    var _err = _client.PeeloutAmqpWrapper(deserializationType: typeof(AmqpRpcServerException), response.ResponseMessage) as AmqpRpcServerException;
+                    _tcs.SetException(new AmqpRpcException(_err.Message, _err.Stack, _err.Code));
+                }
+            }
+
+            public void SetError(string error)
+            {
+                var exception = new Exception(error);
+                _tcs.SetException(exception);
+            }
+        }
         private ISession _session = null;
         private ISenderLink _sender = null;
         private IReceiverLink _receiver = null;
@@ -23,6 +58,7 @@ namespace AmqpNetLiteRpcCore
 
         private bool _isTimedout = false;
 
+        private ConcurrentDictionary<string, IPendingRequest> _pendingRequests = new ConcurrentDictionary<string, IPendingRequest>();
 
         public uint Timeout
         {
@@ -69,19 +105,11 @@ namespace AmqpNetLiteRpcCore
             await this._sender.SendAsync(_message);
             if (request.Type.Equals(RpcRequestType.Call))
             {
-                var receiverWaitTask = Task.Run<AmqpRpcResponse>(function: this.processResponse);
                 try
                 {
-                    var _response = await receiverWaitTask.TimeoutAfterAsync(timeout: unchecked((int)this._timeout));
-                    if (_response.ResponseCode.Equals(RpcResponseType.Ok))
-                    {
-                        return this.PeeloutAmqpWrapper(deserializationType: typeof(T), _response.ResponseMessage);
-                    }
-                    else if (_response.ResponseCode.Equals(RpcResponseType.Error))
-                    {
-                        var _err = this.PeeloutAmqpWrapper(deserializationType: typeof(AmqpRpcServerException), _response.ResponseMessage) as AmqpRpcServerException;
-                        throw new AmqpRpcException(_err.Message, _err.Stack, _err.Code);
-                    }
+                    var tcs = new TaskCompletionSource<T>();
+                    this._pendingRequests.TryAdd(id, new PendingRequest<T>(tcs, this));
+                    return await tcs.Task.TimeoutAfterAsync<T>(timeout: unchecked((int)this._timeout));
                 }
                 catch (TimeoutException)
                 {
@@ -92,17 +120,19 @@ namespace AmqpNetLiteRpcCore
             return null;
         }
 
-        private AmqpRpcResponse processResponse()
+        private void processResponse(IReceiverLink receiver, Message message)
         {
-            var _response = this._receiver.Receive();
-            this._receiver.Accept(_response);
-            if (this._isTimedout)
+            if (!this._pendingRequests.TryRemove(message.Properties.CorrelationId, out var tcs))
             {
-                return null;
+                Console.WriteLine($"No pending response for {message.Properties.CorrelationId}");
             }
-            else
+            if (!this._isTimedout)
             {
-                return _response.GetBody<AmqpRpcResponse>();
+                var response = message.GetBody<AmqpRpcResponse>();
+                if (tcs != null)
+                {
+                    tcs.SetResult(response);
+                }
             }
         }
 
@@ -153,6 +183,7 @@ namespace AmqpNetLiteRpcCore
             };
 
             this._receiver = this._session.CreateReceiver(name: $"AmqpNetLiteRpcClientReceiver-{this._amqpNode}", source: _receiverSource, onAttached: OnReceiverLinkAttached);
+            this._receiver.Start(credit: int.MaxValue, onMessage: this.processResponse);
             this._sender = this._session.CreateSender(name: $"AmqpNetLiteRpcClientSender-{this._amqpNode}", target: new Target(), onAttached: OnSenderLinkAttached);
             if (!_receiverAttached.WaitOne(this._receiverAttacheTimeout))
             {
