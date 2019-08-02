@@ -3,6 +3,7 @@ using Amqp.Serialization;
 using AmqpNetLiteRpcCore;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace AmqpNetLiteRpcConsole
@@ -29,20 +30,53 @@ namespace AmqpNetLiteRpcConsole
             try
             {
                 var c = await _rpcClient.CallAsync<TestRequestMap>(functionName: "noParams");
-                Console.WriteLine(JsonConvert.SerializeObject(c));
+                Console.WriteLine($"noParams: {JsonConvert.SerializeObject(c)}");
                 c = await _rpcClient.CallAsync<TestRequestMap>(functionName: "simpleParams", parameter: new TestRequestList() { firstName = "123", lastName = "456" });
-                Console.WriteLine(JsonConvert.SerializeObject(c));
+                Console.WriteLine($"simpleParams: {JsonConvert.SerializeObject(c)}");
                 c = await _rpcClient.CallAsync<TestRequestMap>(functionName: "namedParams", parameter: new TestRequestMap() { firstName = "123", lastName = "456" });
-                Console.WriteLine(JsonConvert.SerializeObject(c));
+                Console.WriteLine($"namedParams: {JsonConvert.SerializeObject(c)}");
                 var D = await _rpcClient.CallAsync<object>(functionName: "nullResponse");
-                Console.WriteLine(D is null);
+                Console.WriteLine($"nullresponse: {D is null}");
+                for (int i = 0; i < 5; i++)
+                {
+                    Console.WriteLine(i);
+                    List<Task> _lst = new List<Task>();
+                    _lst.Add(Task.Run(async () =>
+                    {
+                        var c1 = await _rpcClient.CallAsync<TestRequestMap>(functionName: "noParams");
+                        Console.WriteLine($"noParams: {JsonConvert.SerializeObject(c1)}");
+                        Console.WriteLine($"noparams: {c1.firstName.Equals("noParams")}, {c1.lastName.Equals("noParams1")}");
+                    }));
+                    _lst.Add(Task.Run(async () =>
+                    {
+                        var c2 = await _rpcClient.CallAsync<TestRequestMap>(functionName: "simpleParams", parameter: new TestRequestList() { firstName = "123", lastName = "456" });
+                        Console.WriteLine($"simpleParams: {JsonConvert.SerializeObject(c2)}");
+                        Console.WriteLine($"simpleParams: {c2.firstName.Equals("simpleParams")}, {c2.lastName.Equals("simpleParams1")}");
+                    }));
+                    _lst.Add(Task.Run(async () =>
+                    {
+                        var c3 = await _rpcClient.CallAsync<TestRequestMap>(functionName: "namedParams", parameter: new TestRequestMap() { firstName = "123", lastName = "456" });
+                        Console.WriteLine($"namedParams: {JsonConvert.SerializeObject(c3)}");
+                        Console.WriteLine($"namedParams: {c3.firstName.Equals("namedParams")}, {c3.lastName.Equals("namedParams1")}");
+                    }));
+                    _lst.Add(Task.Run(async () =>
+                    {
+                        var D1 = await _rpcClient.CallAsync<object>(functionName: "nullResponse");
+                        Console.WriteLine($"nullresponse: {D1 is null}");
+                    }));
+                    while (_lst.Count > 0)
+                    {
+                        var _completedTask = await Task.WhenAny(_lst);
+                        _lst.Remove(_completedTask);
+                    }
+                }
                 await _rpcClient.CallAsync<TestRequestMap>(functionName: "namedParams");
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
             }
-            Console.ReadLine();
+            //Console.ReadLine();
         }
     }
 
@@ -71,19 +105,19 @@ namespace AmqpNetLiteRpcConsole
         [RpcMethod]
         public TestRequestMap noParams()
         {
-            return new TestRequestMap() { firstName = "123", lastName = "456" };
+            return new TestRequestMap() { firstName = "noParams", lastName = "noParams1" };
         }
 
         [RpcMethod]
         public TestRequestMap simpleParams(TestRequestList request)
         {
-            return new TestRequestMap() { firstName = "123", lastName = "456" };
+            return new TestRequestMap() { firstName = "simpleParams", lastName = "simpleParams1" };
         }
 
         [RpcMethod]
         public TestRequestMap namedParams(TestRequestMap request)
         {
-            return new TestRequestMap() { firstName = "123", lastName = "456" };
+            return new TestRequestMap() { firstName = "namedParams", lastName = "namedParams1" };
         }
 
         [RpcMethod]
