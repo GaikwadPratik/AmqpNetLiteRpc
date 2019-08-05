@@ -1,5 +1,5 @@
-using System;
 using Amqp.Serialization;
+using System;
 
 namespace AmqpNetLiteRpcCore
 {

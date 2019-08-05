@@ -7,7 +7,7 @@ namespace AmqpNetLiteRpcCore
     {
         [AmqpMember(Name = "responseCode")]
         public string ResponseCode { get; set; }
-        
+
         [AmqpMember(Name = "responseMessage")]
         public object ResponseMessage { get; set; }
     }

@@ -1,20 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Reflection;
-using Amqp;
+﻿using Amqp;
 using Amqp.Framing;
 using Amqp.Serialization;
 using Amqp.Types;
-using Serilog;
-using System.Text;
 using Newtonsoft.Json;
+using Serilog;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Threading.Tasks;
 
 namespace AmqpNetLiteRpcCore
 {
-    internal class RpcServer: RpcBase, IRpcServer
+    internal class RpcServer : RpcBase, IRpcServer
     {
         private ISession _session = null;
         private ISenderLink _sender = null;
@@ -23,6 +22,7 @@ namespace AmqpNetLiteRpcCore
         private string _amqpNode = string.Empty;
 
         private Dictionary<string, RpcRequestObjectType> _serverFunctions = new Dictionary<string, RpcRequestObjectType>();
+        private readonly Utility _utility = new Utility();
 
         public RpcServer(string amqpNodeAddress, ISession session)
         {
@@ -72,7 +72,7 @@ namespace AmqpNetLiteRpcCore
                     return;
                 }
 
-                var _methodParameter = this.PeeloutAmqpWrapper(deserializationType: _requestObjectType.Value.RequestParameterType, parameters: _rpcRequest.Parameters);
+                var _methodParameter = this._utility.PeeloutAmqpWrapper(deserializationType: _requestObjectType.Value.RequestParameterType, parameters: _rpcRequest.Parameters);
                 var _classInstance = Activator.CreateInstance(_requestObjectType.Value.FunctionWrapperType);
                 MethodInfo _method = _requestObjectType.Value.FunctionWrapperType.GetMethod(_requestObjectType.Key);
                 try

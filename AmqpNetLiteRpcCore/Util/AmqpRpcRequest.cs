@@ -1,4 +1,3 @@
-using Amqp;
 using Amqp.Serialization;
 
 namespace AmqpNetLiteRpcCore

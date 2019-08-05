@@ -1,50 +1,16 @@
+using Amqp;
+using Amqp.Framing;
+using AmqpNetLiteRpcCore.Util;
+using Serilog;
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
-using Amqp;
-using Amqp.Framing;
-using Serilog;
 
 namespace AmqpNetLiteRpcCore
 {
     internal class RpcClient : RpcBase, IRpcClient
     {
-        private interface IPendingRequest
-        {
-            void SetResult(AmqpRpcResponse response);
-            void SetError(string error);
-        }
-        private class PendingRequest<TResult> : IPendingRequest
-        {
-            private readonly TaskCompletionSource<TResult> _tcs;
-            private readonly RpcClient _client;
-
-            public PendingRequest(TaskCompletionSource<TResult> tcs, RpcClient client)
-            {
-                _client = client;
-                _tcs = tcs;
-            }
-
-            public void SetResult(AmqpRpcResponse response)
-            {
-                if (response.ResponseCode.Equals(RpcResponseType.Ok))
-                {
-                    _tcs.SetResult(_client.PeeloutAmqpWrapper(deserializationType: typeof(TResult), response.ResponseMessage));
-                }
-                else if (response.ResponseCode.Equals(RpcResponseType.Error))
-                {
-                    var _err = _client.PeeloutAmqpWrapper(deserializationType: typeof(AmqpRpcServerException), response.ResponseMessage) as AmqpRpcServerException;
-                    _tcs.SetException(new AmqpRpcException(_err.Message, _err.Stack, _err.Code));
-                }
-            }
-
-            public void SetError(string error)
-            {
-                var exception = new Exception(error);
-                _tcs.SetException(exception);
-            }
-        }
         private ISession _session = null;
         private ISenderLink _sender = null;
         private IReceiverLink _receiver = null;
@@ -108,7 +74,7 @@ namespace AmqpNetLiteRpcCore
                 try
                 {
                     var tcs = new TaskCompletionSource<T>();
-                    this._pendingRequests.TryAdd(id, new PendingRequest<T>(tcs, this));
+                    this._pendingRequests.TryAdd(id, new PendingRequest<T>(tcs));
                     return await tcs.Task.TimeoutAfterAsync<T>(timeout: unchecked((int)this._timeout));
                 }
                 catch (TimeoutException)

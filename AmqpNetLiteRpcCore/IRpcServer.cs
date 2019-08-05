@@ -2,14 +2,14 @@ using System.Threading.Tasks;
 
 namespace AmqpNetLiteRpcCore
 {
-	public interface IRpcServer
-	{
-		void Create();
+    public interface IRpcServer
+    {
+        void Create();
 
-		Task DestroyAsync();
+        Task DestroyAsync();
 
-		void Bind();
+        void Bind();
 
-    void Bind(string functionName, RpcRequestObjectType requestObjectType);
-	}
+        void Bind(string functionName, RpcRequestObjectType requestObjectType);
+    }
 }
