@@ -4,6 +4,7 @@ using Amqp.Serialization;
 using Amqp.Types;
 using Newtonsoft.Json;
 using Serilog;
+using Serilog.Formatting.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -23,6 +24,11 @@ namespace AmqpNetLiteRpcCore
 
         private Dictionary<string, RpcRequestObjectType> _serverFunctions = new Dictionary<string, RpcRequestObjectType>();
         private readonly Utility _utility = new Utility();
+        private readonly List<string> _rpMethodTypes = typeof(RpcRequestType)
+                    .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
+                    .Where(x => x.IsLiteral && !x.IsInitOnly)
+                    .Select(x => x.GetRawConstantValue() as string)
+                    .ToList();
 
         public RpcServer(string amqpNodeAddress, ISession session)
         {
@@ -40,11 +46,6 @@ namespace AmqpNetLiteRpcCore
                 AmqpRpcRequest _rpcRequest = message.GetBody<AmqpRpcRequest>();
                 string _replyTo = message.Properties.ReplyTo;
                 string _correlationId = message.Properties.CorrelationId;
-                var _rpMethodTypes = typeof(RpcRequestType)
-                    .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
-                    .Where(x => x.IsLiteral && !x.IsInitOnly)
-                    .Select(x => x.GetRawConstantValue() as string)
-                    .ToList();
 
                 if (!_rpMethodTypes.Contains(_rpcRequest.Type))
                 {
@@ -237,7 +238,7 @@ namespace AmqpNetLiteRpcCore
         {
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
-                .WriteTo.File(Path.Combine("logs", "AmqpNetLiteRpcServerLogs.txt"), rollOnFileSizeLimit: true)
+                .WriteTo.File(formatter: new JsonFormatter(), path: Path.Combine("logs", "AmqpNetLiteRpcServerLogs.txt"), rollOnFileSizeLimit: true)
                 .CreateLogger();
             var nodeAddress = this.ParseRpcNodeAddress(this._amqpNode);
             Source _source = new Source()
@@ -255,7 +256,7 @@ namespace AmqpNetLiteRpcCore
             this._receiver = this._session.CreateReceiver(name: $"AmqpNetLiteRpcServerReceiver-{this._amqpNode}", source: _source, onAttached: OnReceiverLinkAttached);
             this._sender = this._session.CreateSender(name: $"AmqpNetLiteRpcServerSender-{this._amqpNode}", target: new Target(), onAttached: this.OnSenderLinkAttached);
             this._receiver.Closed += OnReceiverLinkClosed;
-            this._receiver.Start(credit: 100, onMessage: ProcessIncomingRpcRequestAsync);
+            this._receiver.Start(credit: int.MaxValue, onMessage: ProcessIncomingRpcRequestAsync);
         }
 
         public async Task DestroyAsync()
