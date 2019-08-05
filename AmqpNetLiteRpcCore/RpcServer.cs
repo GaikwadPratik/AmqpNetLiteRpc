@@ -4,10 +4,8 @@ using Amqp.Serialization;
 using Amqp.Types;
 using Newtonsoft.Json;
 using Serilog;
-using Serilog.Formatting.Json;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -236,10 +234,6 @@ namespace AmqpNetLiteRpcCore
 
         public void Create()
         {
-            Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Debug()
-                .WriteTo.File(formatter: new JsonFormatter(), path: Path.Combine("logs", "AmqpNetLiteRpcServerLogs.txt"), rollOnFileSizeLimit: true)
-                .CreateLogger();
             var nodeAddress = this.ParseRpcNodeAddress(this._amqpNode);
             Source _source = new Source()
             {
