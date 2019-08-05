@@ -1,5 +1,6 @@
 using Amqp;
 using Serilog;
+using Serilog.Formatting.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -27,7 +28,7 @@ namespace AmqpNetLiteRpcCore
         {
             Log.Logger = new LoggerConfiguration()
                     .MinimumLevel.Debug()
-                    .WriteTo.File(Path.Combine("logs", "AmqpNetLiteRpcClientLogs.txt"), rollOnFileSizeLimit: true)
+                    .WriteTo.File(formatter: new JsonFormatter(), path: Path.Combine("logs", "AmqpNetLiteRpcClientLogs.txt"), rollOnFileSizeLimit: true)
                     .CreateLogger();
             if (this._connection == null)
             {
@@ -51,7 +52,7 @@ namespace AmqpNetLiteRpcCore
         {
             Log.Logger = new LoggerConfiguration()
                     .MinimumLevel.Debug()
-                    .WriteTo.File(Path.Combine("logs", "AmqpNetLiteRpcServerLogs.txt"), rollOnFileSizeLimit: true)
+                    .WriteTo.File(formatter: new JsonFormatter(), path: Path.Combine("logs", "AmqpNetLiteRpcServerLogs.txt"), rollOnFileSizeLimit: true)
                     .CreateLogger();
             if (this._connection == null)
             {
