@@ -57,7 +57,7 @@ namespace AmqpNetLiteRpcCore
                     await this.SendResponseAsync(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: null, ex: new AmqpRpcMissingFunctionNameException(JsonConvert.SerializeObject(_rpcRequest)));
                     return;
                 }
-                if (!this._serverFunctions.Any(sf => sf.Key.ToLower().Equals(_rpcRequest.Method.ToLower(), StringComparison.OrdinalIgnoreCase)))
+                if (!this._serverFunctions.ContainsKey(_rpcRequest.Method))
                 {
                     Log.Error($"Unknown RPC method request received: {_rpcRequest.Method}");
                     await this.SendResponseAsync(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: null, ex: new AmqpRpcUnknownFunctionException($"{_rpcRequest.Method} is not bound to remote server"));
