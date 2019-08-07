@@ -145,7 +145,7 @@ namespace AmqpNetLiteRpcConsole
         [RpcMethod]
         public async Task<TestRequestMap> noParamsAsync()
         {
-            return new TestRequestMap() { firstName = "noParams", lastName = "noParams1" };
+            return await Task.Run(() => new TestRequestMap() { firstName = "noParams", lastName = "noParams1" });
         }
 
         [RpcMethod]
