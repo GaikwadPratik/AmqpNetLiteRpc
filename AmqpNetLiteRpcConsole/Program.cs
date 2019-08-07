@@ -92,7 +92,7 @@ namespace AmqpNetLiteRpcConsole
             {
                 Console.WriteLine(ex);
             }
-            Console.ReadLine();
+            //Console.ReadLine();
         }
     }
 
