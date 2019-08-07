@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 namespace AmqpNetLiteRpcCore
@@ -74,18 +75,38 @@ namespace AmqpNetLiteRpcCore
                 var _methodParameter = this._utility.PeeloutAmqpWrapper(deserializationType: _requestObjectType.Value.RequestParameterType, parameters: _rpcRequest.Parameters);
                 var _classInstance = Activator.CreateInstance(_requestObjectType.Value.FunctionWrapperType);
                 MethodInfo _method = _requestObjectType.Value.FunctionWrapperType.GetMethod(_requestObjectType.Key);
+
+                var _asyncAttribute = _method.GetCustomAttribute<AsyncStateMachineAttribute>();
+                var _isAsync = (_asyncAttribute != null) || (_method.ReturnType.BaseType.Equals(typeof(Task)));
+
                 try
                 {
                     if (!(_methodParameter is null) && _method.GetParameters().Length > 0)
                     {
                         //TODO: check for missing properties from rpc calls
                         //await this.SendResponse(replyTo: _replyTo, correlationId: _correlationId, _rpcRequest.type, null, new AmqpRpcUnknowParameterException($"{_rpcRequest.method} invokation failed, mismatch in parameter"));
-                        object _rtnVal = _method.Invoke(_classInstance, new[] { _methodParameter });
+                        object _rtnVal = null;
+                        if (_isAsync)
+                        {
+                            _rtnVal = await (dynamic) _method.Invoke(_classInstance, new[] { _methodParameter });
+                        }
+                        else
+                        {
+                            _rtnVal = _method.Invoke(_classInstance, new[] { _methodParameter });
+                        }
                         await this.SendResponseAsync(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: _rtnVal, ex: null);
                     }
                     else if (_methodParameter is null && _method.GetParameters().Length.Equals(0))
                     {
-                        object _rtnVal = _method.Invoke(_classInstance, null);
+                        object _rtnVal = null;
+                        if (_isAsync)
+                        {
+                            _rtnVal = await (dynamic)_method.Invoke(_classInstance, null);
+                        }
+                        else
+                        {
+                            _rtnVal = _method.Invoke(_classInstance, null);
+                        }
                         await this.SendResponseAsync(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: _rtnVal, ex: null);
                     }
                     else
