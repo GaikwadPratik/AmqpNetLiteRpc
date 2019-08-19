@@ -14,7 +14,7 @@ namespace AmqpNetLiteRpcCore
         private Dictionary<string, IRpcServer> _serverMap = new Dictionary<string, IRpcServer>();
         private ISession _session = null;
 
-        public void InitiateAmqpRpc(Connection connection)
+        public void InitiateAmqpRpc(IConnection connection)
         {
             this._connection = connection ?? throw new NullReferenceException("Amqp connection is null");
             if (this._connection.IsClosed)
