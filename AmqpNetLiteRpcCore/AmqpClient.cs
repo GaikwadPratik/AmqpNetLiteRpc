@@ -4,6 +4,7 @@ using Serilog.Formatting.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace AmqpNetLiteRpcCore
 {
@@ -72,7 +73,7 @@ namespace AmqpNetLiteRpcCore
             return _server;
         }
 
-        public async void CloseRpcClientAsync(string amqpNode)
+        public async Task CloseRpcClientAsync(string amqpNode)
         {
             IRpcClient _client = null;
             if (this._clientMap.TryGetValue(amqpNode, out _client))
@@ -86,7 +87,7 @@ namespace AmqpNetLiteRpcCore
             }
         }
 
-        public async void CloseRpcServerAsync(string amqpNode)
+        public async Task CloseRpcServerAsync(string amqpNode)
         {
             IRpcServer _server = null;
             if (this._serverMap.TryGetValue(amqpNode, out _server))
@@ -98,6 +99,32 @@ namespace AmqpNetLiteRpcCore
             {
                 this._serverMap.Remove(amqpNode);
             }
+        }
+
+        public async Task CloseAmqpClientSessionAsync()
+        {
+            if (this._session == null || this._session.IsClosed)
+            {
+                throw new Exception("Session is alrady closed");
+            }
+            if (this._clientMap.Count > 0)
+            {
+                throw new Exception("Rpc clients are running associated to session. Please close them before closing session");
+            }
+            await this._session.CloseAsync();
+        }
+
+        public async Task CloseAmqpServerSessionAsync()
+        {
+            if (this._session == null || this._session.IsClosed)
+            {
+                throw new Exception("Session is alrady closed");
+            }
+            if (this._serverMap.Count > 0)
+            {
+                throw new Exception("Rpc servers are running associated to session. Please close them before closing session");
+            }
+            await this._session.CloseAsync();
         }
     }
 }
