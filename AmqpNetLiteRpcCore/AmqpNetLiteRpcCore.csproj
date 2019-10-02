@@ -5,7 +5,7 @@
     <LangVersion>7.3</LangVersion>
     <Authors>Pratik Gaikwad</Authors>
     <Description />
-    <Version>1.0.7</Version>
+    <Version>1.0.8</Version>
     <RepositoryUrl>https://github.com/GaikwadPratik/AmqpNetLiteRpc.git</RepositoryUrl>
     <PackageTags>AMQPNetLiteRpc,AMQPNetLite,Rpc,amqp10,amqp10-rpc,amqp1.0,amqp-1-0,amqp </PackageTags>
   </PropertyGroup>
