@@ -38,9 +38,9 @@ namespace AmqpNetLiteRpcCore
         private async void ProcessIncomingRpcRequestAsync(IReceiverLink receiver, Message message)
         {
             //Accept the message since we would be replying using sender, hence disposition does not make sense
-            receiver.Accept(message);
             await Task.Run(async () =>
             {
+                receiver.Accept(message);
                 //Deserialize the body
                 AmqpRpcRequest _rpcRequest = message.GetBody<AmqpRpcRequest>();
                 string _replyTo = message.Properties.ReplyTo;
@@ -88,7 +88,7 @@ namespace AmqpNetLiteRpcCore
                         object _rtnVal = null;
                         if (_isAsync)
                         {
-                            _rtnVal = await (dynamic) _method.Invoke(_classInstance, new[] { _methodParameter });
+                            _rtnVal = await (dynamic)_method.Invoke(_classInstance, new[] { _methodParameter });
                         }
                         else
                         {
