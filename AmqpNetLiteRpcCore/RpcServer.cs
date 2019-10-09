@@ -86,28 +86,44 @@ namespace AmqpNetLiteRpcCore
                         //TODO: check for missing properties from rpc calls
                         //await this.SendResponse(replyTo: _replyTo, correlationId: _correlationId, _rpcRequest.type, null, new AmqpRpcUnknowParameterException($"{_rpcRequest.method} invokation failed, mismatch in parameter"));
                         object _rtnVal = null;
-                        if (_isAsync)
+                        try
                         {
-                            _rtnVal = await (dynamic)_method.Invoke(_classInstance, new[] { _methodParameter });
+                            if (_isAsync)
+                            {
+                                _rtnVal = await (dynamic)_method.Invoke(_classInstance, new[] { _methodParameter });
+                            }
+                            else
+                            {
+                                _rtnVal = _method.Invoke(_classInstance, new[] { _methodParameter });
+                            }
+                            await this.SendResponseAsync(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: _rtnVal, ex: null);
                         }
-                        else
+                        catch (Exception ex)
                         {
-                            _rtnVal = _method.Invoke(_classInstance, new[] { _methodParameter });
+                            await this.SendResponseAsync(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: null, ex: ex);
+                            return;
                         }
-                        await this.SendResponseAsync(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: _rtnVal, ex: null);
                     }
                     else if (_methodParameter is null && _method.GetParameters().Length.Equals(0))
                     {
                         object _rtnVal = null;
-                        if (_isAsync)
+                        try
                         {
-                            _rtnVal = await (dynamic)_method.Invoke(_classInstance, null);
+                            if (_isAsync)
+                            {
+                                _rtnVal = await (dynamic)_method.Invoke(_classInstance, null);
+                            }
+                            else
+                            {
+                                _rtnVal = _method.Invoke(_classInstance, null);
+                            }
+                            await this.SendResponseAsync(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: _rtnVal, ex: null);
                         }
-                        else
+                        catch (Exception ex)
                         {
-                            _rtnVal = _method.Invoke(_classInstance, null);
+                            await this.SendResponseAsync(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: null, ex: ex);
+                            return;
                         }
-                        await this.SendResponseAsync(replyTo: _replyTo, correlationId: _correlationId, requestType: _rpcRequest.Type, response: _rtnVal, ex: null);
                     }
                     else
                     {
@@ -134,9 +150,20 @@ namespace AmqpNetLiteRpcCore
             if (ex != null)
             {
                 _response.ResponseCode = RpcResponseType.Error;
+                if (ex.InnerException != null)
+                {
+                    ex = ex.InnerException;
+                }
+                string _errorCode = null;
+                var _codePropInfo = ex.GetType().GetProperties()
+                    .SingleOrDefault(p => p.Name.Equals("Code", StringComparison.OrdinalIgnoreCase));
+                if (_codePropInfo != null)
+                {
+                    _errorCode = _codePropInfo.GetValue(ex, null) as string;
+                }
                 var _error = new AmqpRpcServerException()
                 {
-                    Code = ErrorCode.AmqpRpcUnknownParameter,
+                    Code = _errorCode,
                     Message = ex.Message,
                     Stack = ex.StackTrace
                 };
