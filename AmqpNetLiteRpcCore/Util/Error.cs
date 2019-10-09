@@ -30,7 +30,7 @@ namespace AmqpNetLiteRpcCore
 
     public class AmqpRpcMissingAttributeException : Exception
     {
-        public string Code = ErrorCode.AmqpRpcMissingAttributeException;
+        public string Code { get; set; } = ErrorCode.AmqpRpcMissingAttributeException;
         public AmqpRpcMissingAttributeException(string message) : base(message)
         { }
     }
@@ -50,7 +50,7 @@ namespace AmqpNetLiteRpcCore
     public class AmqpRpcRequestTimeoutException : Exception
     {
         [AmqpMember(Name = "code")]
-        public string Code = ErrorCode.AmqpRpcRequestTimeOut;
+        public string Code { get; set; } = ErrorCode.AmqpRpcRequestTimeOut;
         public AmqpRpcRequestTimeoutException(string message) : base(message)
         {
         }
@@ -60,7 +60,7 @@ namespace AmqpNetLiteRpcCore
     public class AmqpRpcMissingFunctionDefinitionException : Exception
     {
         [AmqpMember(Name = "code")]
-        public string Code = ErrorCode.AmqpRpcMissingFunctionDefinition;
+        public string Code { get; set; } = ErrorCode.AmqpRpcMissingFunctionDefinition;
         public AmqpRpcMissingFunctionDefinitionException(string message) : base(message)
         {
         }
@@ -70,7 +70,7 @@ namespace AmqpNetLiteRpcCore
     public class AmqpRpcMissingFunctionNameException : Exception
     {
         [AmqpMember(Name = "code")]
-        public string Code = ErrorCode.AmqpRpcMissingFunctionName;
+        public string Code { get; set; } = ErrorCode.AmqpRpcMissingFunctionName;
         public AmqpRpcMissingFunctionNameException(string message) : base(message)
         {
         }
@@ -80,7 +80,7 @@ namespace AmqpNetLiteRpcCore
     public class AmqpRpcDuplicateFunctionDefinitionException : Exception
     {
         [AmqpMember(Name = "code")]
-        public string Code = ErrorCode.AmqpRpcDuplicateFunctionDefinition;
+        public string Code { get; set; } = ErrorCode.AmqpRpcDuplicateFunctionDefinition;
         public AmqpRpcDuplicateFunctionDefinitionException(string message) : base(message)
         {
         }
@@ -90,7 +90,7 @@ namespace AmqpNetLiteRpcCore
     public class AmqpRpcParamsNotObjectException : Exception
     {
         [AmqpMember(Name = "code")]
-        public string Code = ErrorCode.AmqpRpcParamsNotObject;
+        public string Code { get; set; } = ErrorCode.AmqpRpcParamsNotObject;
         public AmqpRpcParamsNotObjectException(string message) : base(message)
         {
         }
@@ -100,7 +100,7 @@ namespace AmqpNetLiteRpcCore
     public class AmqpRpcParamsMissingPropertiesException : Exception
     {
         [AmqpMember(Name = "code")]
-        public string Code = ErrorCode.AmqpRpcParamsMissingProperties;
+        public string Code { get; set; } = ErrorCode.AmqpRpcParamsMissingProperties;
         public AmqpRpcParamsMissingPropertiesException(string message) : base(message)
         {
         }
@@ -110,7 +110,7 @@ namespace AmqpNetLiteRpcCore
     public class AmqpRpcUnknowParameterException : Exception
     {
         [AmqpMember(Name = "code")]
-        public string Code = ErrorCode.AmqpRpcUnknownParameter;
+        public string Code { get; set; } = ErrorCode.AmqpRpcUnknownParameter;
         public AmqpRpcUnknowParameterException(string message) : base(message)
         {
         }
@@ -120,7 +120,7 @@ namespace AmqpNetLiteRpcCore
     public class AmqpRpcUnknownFunctionException : Exception
     {
         [AmqpMember(Name = "code")]
-        public string Code = ErrorCode.AmqpRpcUnknownFunction;
+        public string Code { get; set; } = ErrorCode.AmqpRpcUnknownFunction;
         public AmqpRpcUnknownFunctionException(string message) : base(message)
         {
         }
@@ -130,7 +130,7 @@ namespace AmqpNetLiteRpcCore
     public class AmqpRpcFunctionDefinitionValidationException : Exception
     {
         [AmqpMember(Name = "code")]
-        public string Code = ErrorCode.AmqpRpcFunctionDefinitionValidationError;
+        public string Code { get; set; } = ErrorCode.AmqpRpcFunctionDefinitionValidationError;
         public AmqpRpcFunctionDefinitionValidationException(string message) : base(message)
         {
         }
@@ -140,7 +140,7 @@ namespace AmqpNetLiteRpcCore
     public class AmqpRpcInvalidNodeAddressException : Exception
     {
         [AmqpMember(Name = "code")]
-        public string Code = ErrorCode.AmqpRpcInvalidNodeAddressException;
+        public string Code { get; set; } = ErrorCode.AmqpRpcInvalidNodeAddressException;
         public AmqpRpcInvalidNodeAddressException(string message) : base(message)
         {
         }
@@ -150,7 +150,7 @@ namespace AmqpNetLiteRpcCore
     public class AmqpRpcInvalidRpcTypeException : Exception
     {
         [AmqpMember(Name = "code")]
-        public string Code = ErrorCode.AmqpRpcInvalidRpcTypeException;
+        public string Code { get; set; } = ErrorCode.AmqpRpcInvalidRpcTypeException;
         public AmqpRpcInvalidRpcTypeException(string message) : base(message)
         {
         }
