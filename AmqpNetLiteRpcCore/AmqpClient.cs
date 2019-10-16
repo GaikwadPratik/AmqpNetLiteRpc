@@ -27,10 +27,6 @@ namespace AmqpNetLiteRpcCore
 
         public IRpcClient CreateAmqpRpcClient(string amqpNode, IMessageOptions options = null)
         {
-            Log.Logger = new LoggerConfiguration()
-                    .MinimumLevel.Debug()
-                    .WriteTo.File(formatter: new JsonFormatter(), path: Path.Combine("logs", "AmqpNetLiteRpcClientLogs.txt"), rollOnFileSizeLimit: true)
-                    .CreateLogger();
             if (this._connection == null)
             {
                 throw new Exception("Please initiate connection using InitiateAmqpRpc");
@@ -51,10 +47,6 @@ namespace AmqpNetLiteRpcCore
 
         public IRpcServer CreateAmqpRpcServer(string amqpNode)
         {
-            Log.Logger = new LoggerConfiguration()
-                    .MinimumLevel.Debug()
-                    .WriteTo.File(formatter: new JsonFormatter(), path: Path.Combine("logs", "AmqpNetLiteRpcServerLogs.txt"), rollOnFileSizeLimit: true)
-                    .CreateLogger();
             if (this._connection == null)
             {
                 throw new Exception("Please initiate connection using InitiateAmqpRpc");
