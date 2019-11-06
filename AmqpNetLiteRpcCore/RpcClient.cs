@@ -121,7 +121,7 @@ namespace AmqpNetLiteRpcCore
             {
                 Method = functionName,
                 Parameters = parameter,
-                Type = RpcRequestType.Call
+                Type = RpcRequestType.Notify
             };
 
             await this.SendRequestAsync<object>(request);
