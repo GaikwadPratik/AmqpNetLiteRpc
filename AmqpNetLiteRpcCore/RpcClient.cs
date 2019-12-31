@@ -43,13 +43,13 @@ namespace AmqpNetLiteRpcCore
         private void OnReceiverLinkAttached(ILink _link, Attach attach)
         {
             this._clientReceiveAddress = ((Source)attach.Source).Address;
-            Log.Information($"RpcClient receiver is connected to {this._amqpNode} on address {this._clientReceiveAddress}");
+            Log.Debug($"RpcClient receiver is connected to {this._amqpNode} on address {this._clientReceiveAddress}");
             this._receiverAttached.Set();
         }
 
         private void OnSenderLinkAttached(ILink _link, Attach attach)
         {
-            Log.Information($"RpcClient sender is connected to {this._amqpNode}{(!string.IsNullOrEmpty(this._subject) ? string.Format("/{0}", this._subject) : string.Empty)}");
+            Log.Debug($"RpcClient sender is connected to {this._amqpNode}{(!string.IsNullOrEmpty(this._subject) ? string.Format("/{0}", this._subject) : string.Empty)}");
         }
 
         private async Task<T> SendRequestAsync<T>(AmqpRpcRequest request) where T : class

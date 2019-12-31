@@ -193,17 +193,17 @@ namespace AmqpNetLiteRpcCore
 
         private void OnReceiverLinkAttached(ILink _link, Attach attach)
         {
-            Log.Information($"RpcServer receiver is connected to {this._amqpNode}");
+            Log.Debug($"RpcServer receiver is connected to {this._amqpNode}");
         }
 
         private void OnSenderLinkAttached(ILink _link, Attach attach)
         {
-            Log.Information($"RpcServer sender is connected to {this._amqpNode}");
+            Log.Debug($"RpcServer sender is connected to {this._amqpNode}");
         }
 
         private void OnReceiverLinkClosed(IAmqpObject sender, Error error)
         {
-            Log.Information($"RpcServer receiver is disconnected from {this._amqpNode}");
+            Log.Debug($"RpcServer receiver is disconnected from {this._amqpNode}");
             if (error != null)
             {
                 Log.Error($"Error received during receiver closing event. description: {error.Description}");
