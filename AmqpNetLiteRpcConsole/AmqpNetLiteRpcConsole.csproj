@@ -2,7 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AmqpNetLiteRpcCore\AmqpNetLiteRpcCore.csproj" />
-    <PackageReference Include="AMQPNetLite" Version="2.3.0" />
+    <PackageReference Include="AMQPNetLite" Version="2.4.0" />
   </ItemGroup>
 
   <PropertyGroup>
