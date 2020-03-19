@@ -22,7 +22,14 @@ namespace AmqpNetLiteRpcCore.Util
             else if (response.ResponseCode.Equals(RpcResponseType.Error))
             {
                 var _err = this._utility.PeeloutAmqpWrapper(deserializationType: typeof(AmqpRpcServerException), response.ResponseMessage) as AmqpRpcServerException;
-                _tcs.SetException(new AmqpRpcException(_err.Message, _err.Stack, _err.Code));
+                if (_err != null)
+                {
+                    _tcs.SetException(new AmqpRpcException(_err.Message, _err.Stack, _err.Code));
+                }
+                else
+                {
+                    _tcs.SetException(new AmqpRpcUnknowException(message: "Something went wrong"));
+                }
             }
         }
 

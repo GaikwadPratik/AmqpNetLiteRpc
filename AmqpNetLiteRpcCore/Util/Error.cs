@@ -155,4 +155,14 @@ namespace AmqpNetLiteRpcCore
         {
         }
     }
+
+    [AmqpContract]
+    public class AmqpRpcUnknowException : Exception
+    {
+        [AmqpMember(Name = "code")]
+        public string Code { get; set; } = ErrorCode.AmqpRpcInvalidRpcTypeException;
+        public AmqpRpcUnknowException(string message) : base(message)
+        {
+        }
+    }
 }
