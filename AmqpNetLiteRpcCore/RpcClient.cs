@@ -68,7 +68,7 @@ namespace AmqpNetLiteRpcCore
             {
                 Ttl = this._timeout
             };
-            await this._sender.SendAsync(_message);
+            _ = this._sender.SendAsync(_message);
             if (request.Type.Equals(RpcRequestType.Call))
             {
                 try
